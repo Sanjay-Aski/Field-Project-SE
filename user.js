@@ -268,6 +268,14 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// Add test connection endpoint
+router.get('/test-connection', (req, res) => {
+    res.json({ 
+        message: 'Backend connection successful! The server is running correctly.',
+        timestamp: new Date().toISOString()
+    });
+});
+
 router.post('/change-password', authMiddleware, changePassword);
 router.post('/send-otp',generateOTP);
 router.post('/reset-password', resetPassword);

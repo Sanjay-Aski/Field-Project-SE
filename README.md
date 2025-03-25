@@ -47,7 +47,7 @@ SchoolTrack is a comprehensive educational management system designed to facilit
 
 1. Clone the repository
    ```
-   git clone https://github.com/yourusername/Field-Project-SE.git
+   git clone https://github.com/Sanjay-Aski/Field-Project-SE.git
    cd Field-Project-SE
    ```
 
