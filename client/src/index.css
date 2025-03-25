@@ -26,7 +26,7 @@ a:hover {
 }
 
 body {
-  @apply bg-secondary-50 min-h-screen;
+  @apply bg-sand min-h-screen;
   margin: 0;
   display: flex;
   place-items: center;
@@ -83,11 +83,11 @@ button:focus-visible {
   }
   
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700;
+    @apply bg-primary-500 text-secondary-800 hover:bg-primary-600;
   }
   
   .btn-secondary {
-    @apply bg-secondary-200 text-secondary-800 hover:bg-secondary-300;
+    @apply bg-cream text-secondary-800 hover:bg-gray-100;
   }
   
   .input-field {
@@ -99,6 +99,6 @@ button:focus-visible {
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-6 mb-4;
+    @apply bg-cream rounded-lg shadow-md p-6 mb-4;
   }
 }

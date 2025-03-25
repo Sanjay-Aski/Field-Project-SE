@@ -1,12 +1,12 @@
 import React from 'react';
 
 const AuthButton = ({ type = 'button', loading = false, onClick, children, variant = 'primary', className = '' }) => {
-  const baseClasses = "w-full py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-opacity-50";
+  const baseClasses = "w-full py-3 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-opacity-50 text-base";
   
   const variantClasses = {
-    primary: "bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500",
-    secondary: "bg-secondary-200 text-secondary-800 hover:bg-secondary-300 focus:ring-secondary-400",
-    outline: "bg-transparent border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500"
+    primary: "bg-primary-500 text-secondary-800 hover:bg-primary-600 focus:ring-primary-500 shadow-sm",
+    secondary: "bg-cream text-secondary-800 hover:bg-gray-100 focus:ring-secondary-400 border border-secondary-300",
+    outline: "bg-transparent border border-primary-500 text-primary-600 hover:bg-primary-50 focus:ring-primary-500"
   };
   
   return (

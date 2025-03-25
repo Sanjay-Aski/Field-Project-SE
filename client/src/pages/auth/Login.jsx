@@ -5,13 +5,13 @@ import { toast } from 'react-toastify';
 import AuthCard from '../../components/ui/AuthCard';
 import FormField from '../../components/ui/FormField';
 import AuthButton from '../../components/ui/AuthButton';
-import { FaUserShield, FaChalkboardTeacher, FaUser } from 'react-icons/fa';
+import { FaUserShield, FaChalkboardTeacher, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'parent'  // Default role
+    role: 'parent'  
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -94,8 +94,8 @@ const Login = () => {
   
   return (
     <AuthCard 
-      title="Login to SchoolTrack" 
-      subtitle="Enter your credentials to access your account"
+      title="Welcome Back" 
+      subtitle="Sign in to access your account and manage school activities"
       footer={
         <>
           {formData.role === 'admin' && (
@@ -107,22 +107,24 @@ const Login = () => {
             </p>
           )}
           <p className="mt-2">
-            <Link to="/user/send-otp" className="text-primary-600 hover:underline text-sm">
+            <Link to="/forgot-password" className="text-primary-600 hover:underline text-sm">
               Forgot password?
             </Link>
           </p>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex justify-between bg-gray-100 rounded-lg p-1 mb-4">
+      <h2 className="text-xl font-semibold text-secondary-800 mb-6">Login to your account</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex justify-between bg-sand rounded-lg p-1">
           {roleOptions.map((option) => (
             <button
               key={option.value}
               type="button"
               className={`flex items-center justify-center py-2 px-3 rounded text-sm font-medium transition-colors w-1/3 ${
                 formData.role === option.value
-                  ? 'bg-white text-primary-700 shadow'
+                  ? 'bg-white text-primary-600 shadow-md'
                   : 'text-gray-600 hover:bg-gray-200'
               }`}
               onClick={() => handleChange({ target: { name: 'role', value: option.value } })}
@@ -133,29 +135,41 @@ const Login = () => {
           ))}
         </div>
         
-        <FormField
-          label="Email"
-          type="email"
-          id="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter your email"
-          required
-          error={errors.email}
-        />
+        <div className="relative">
+          <div className="absolute left-3 top-9 text-gray-400">
+            <FaEnvelope />
+          </div>
+          <FormField
+            label="Email"
+            type="email"
+            id="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            required
+            error={errors.email}
+            className="pl-10"
+          />
+        </div>
         
-        <FormField
-          label="Password"
-          type="password"
-          id="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Enter your password"
-          required
-          error={errors.password}
-        />
+        <div className="relative">
+          <div className="absolute left-3 top-9 text-gray-400">
+            <FaLock />
+          </div>
+          <FormField
+            label="Password"
+            type="password"
+            id="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            required
+            error={errors.password}
+            className="pl-10"
+          />
+        </div>
         
-        <div className="pt-2">
+        <div className="pt-3">
           <AuthButton type="submit" loading={loading}>
             Sign In
           </AuthButton>

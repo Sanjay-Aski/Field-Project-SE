@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import AuthCard from '../../components/ui/AuthCard';
 import FormField from '../../components/ui/FormField';
 import AuthButton from '../../components/ui/AuthButton';
-import { FaLock } from 'react-icons/fa';
+import { FaLock, FaEnvelope, FaKey, FaUserShield } from 'react-icons/fa';
 
 const AdminRegister = () => {
   const [formData, setFormData] = useState({
@@ -89,8 +89,8 @@ const AdminRegister = () => {
   
   return (
     <AuthCard 
-      title="Register as Admin" 
-      subtitle="Create a new administrator account"
+      title="Admin Registration" 
+      subtitle="Create a new administrator account to manage school operations"
       footer={
         <p>
           Already have an account?{' '}
@@ -100,41 +100,72 @@ const AdminRegister = () => {
         </p>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField
-          label="Email"
-          type="email"
-          id="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter your email"
-          required
-          error={errors.email}
-        />
+      <div className="flex items-center mb-6 bg-primary-50 p-3 rounded-md border-l-4 border-primary-500">
+        <FaUserShield className="text-primary-600 mr-3 h-6 w-6" />
+        <div>
+          <h2 className="text-xl font-semibold text-secondary-800">Administrator Setup</h2>
+          <p className="text-sm text-secondary-600">Complete the form below to create an admin account</p>
+        </div>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="relative">
+          <div className="absolute left-3 top-9 text-gray-400">
+            <FaEnvelope />
+          </div>
+          <FormField
+            label="Email"
+            type="email"
+            id="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            required
+            error={errors.email}
+            className="pl-10"
+          />
+        </div>
         
-        <FormField
-          label="Password"
-          type="password"
-          id="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="Create a password"
-          required
-          error={errors.password}
-        />
-        
-        <FormField
-          label="Confirm Password"
-          type="password"
-          id="confirmPassword"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          placeholder="Confirm your password"
-          required
-          error={errors.confirmPassword}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <div className="absolute left-3 top-9 text-gray-400">
+              <FaLock />
+            </div>
+            <FormField
+              label="Password"
+              type="password"
+              id="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Create a password"
+              required
+              error={errors.password}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="relative">
+            <div className="absolute left-3 top-9 text-gray-400">
+              <FaLock />
+            </div>
+            <FormField
+              label="Confirm Password"
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+              required
+              error={errors.confirmPassword}
+              className="pl-10"
+            />
+          </div>
+        </div>
         
         <div className="relative">
+          <div className="absolute left-3 top-9 text-gray-400">
+            <FaKey />
+          </div>
           <FormField
             label="Admin Key"
             type="password"
@@ -144,13 +175,12 @@ const AdminRegister = () => {
             placeholder="Enter the admin key"
             required
             error={errors.adminKey}
+            className="pl-10"
           />
-          <div className="absolute right-3 top-9 text-gray-500">
-            <FaLock />
-          </div>
+          <p className="text-xs text-secondary-500 mt-1">The admin key is required for security purposes</p>
         </div>
         
-        <div className="pt-2">
+        <div className="pt-3">
           <AuthButton type="submit" loading={loading}>
             Register Admin Account
           </AuthButton>

@@ -8,17 +8,17 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#fef9e7',
+          100: '#fdf4cf',
+          200: '#fce9a0',
+          300: '#fbdf71',
+          400: '#fad442',
+          500: '#FAC738', // Your primary yellow color
+          600: '#e1b333',
+          700: '#c99c2d',
+          800: '#b08527',
+          900: '#976e21',
+          950: '#7e5a1b',
         },
         secondary: {
           50: '#f8fafc',
@@ -33,10 +33,15 @@ export default {
           900: '#0f172a',
           950: '#020617',
         },
+        cream: '#FDFBF9', // Your cream color
+        sand: '#F0E3C2', // Your background color
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      backgroundColor: {
+        page: '#F0E3C2', // Sand background
+      }
     },
   },
   plugins: [],
