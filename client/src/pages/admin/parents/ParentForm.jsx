@@ -26,58 +26,37 @@ const ParentForm = () => {
     if (id) {
       const fetchParent = async () => {
         try {
-          // In a real app, you would fetch actual data from your API
-          // For now, let's create mock data
-          setTimeout(() => {
-            const mockParent = {
-              _id: id,
-              fullName: `Parent ${id.slice(1)}`,
-              email: `parent${id.slice(1)}@example.com`,
-              phoneNo: `+91 9876543210`,
-              address: `123 Main Street, City ${id.slice(1)}, State, 123456`,
-              children: Array.from(
-                { length: 2 }, 
-                (_, i) => ({ 
-                  _id: `s${id.slice(1)}${i}`, 
-                  fullName: `Student ${id.slice(1)}${i}`,
-                  roll: Math.floor(Math.random() * 50) + 1, 
-                  class: Math.floor(Math.random() * 12) + 1,
-                  division: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
-                  gender: ['Male', 'Female'][Math.floor(Math.random() * 2)],
-                  dob: '2010-05-15'
-                })
-              )
-            };
-            
-            setFormData({
-              ...mockParent,
-              password: '' // Don't populate password field
-            });
-            
-            setChildren(mockParent.children);
-            setLoading(false);
-          }, 800);
+          setLoading(true);
+          const token = localStorage.getItem('token');
           
-          // Uncomment below for actual API call
-          /*
-          const response = await axios.get(`/api/admin/parent/${id}`, {
+          const response = await fetch(`http://localhost:5000/admin/parent/${id}`, {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
           
+          if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
           setFormData({
-            ...response.data,
+            ...data,
             password: '' // Don't populate password field
           });
           
-          setChildren(response.data.children);
-          setLoading(false);
-          */
+          // Format children data
+          if (data.children && Array.isArray(data.children)) {
+            setChildren(data.children);
+          }
         } catch (error) {
           console.error('Error fetching parent:', error);
-          toast.error('Failed to load parent data');
+          toast.error(`Failed to load parent data: ${error.message}`);
           navigate('/admin/parents');
+        } finally {
+          setLoading(false);
         }
       };
       
@@ -205,39 +184,127 @@ const ParentForm = () => {
     
     try {
       // Prepare data for submission
-      const parentData = { ...formData, children };
+      const parentData = { 
+        ...formData,
+        children: children.map(child => {
+          // If the child has an _id, it's an existing child
+          if (child._id) {
+            return child._id;
+          }
+          // Otherwise, it's a new child to be created
+          return null;
+        }).filter(Boolean)
+      };
       
-      // In a real app, you would make an API call to create/update the parent
-      // For now, let's just simulate success
-      setTimeout(() => {
-        setSubmitting(false);
-        toast.success(`Parent ${id ? 'updated' : 'added'} successfully`);
-        navigate('/admin/parents');
-      }, 1000);
+      const token = localStorage.getItem('token');
       
-      // Uncomment below for actual API call
-      /*
       if (id) {
-        await axios.put(`/api/admin/parent/${id}`, parentData, {
+        // Update existing parent
+        const response = await fetch(`http://localhost:5000/admin/parent/${id}`, {
+          method: 'PUT',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(parentData)
         });
-        toast.success('Parent updated successfully');
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+        
+        // Process children - new children, update existing
+        for (const child of children) {
+          // Format the child data properly
+          const childData = {
+            ...child,
+            parentId: id
+          };
+          
+          if (child._id) {
+            // Update existing child
+            const childResponse = await fetch(`http://localhost:5000/admin/student/${child._id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(childData)
+            });
+            
+            if (!childResponse.ok) {
+              console.warn(`Failed to update child: ${childResponse.status}`);
+            }
+          } else {
+            // Add new child
+            const childResponse = await fetch('http://localhost:5000/admin/student', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(childData)
+            });
+            
+            if (!childResponse.ok) {
+              console.warn(`Failed to add child: ${childResponse.status}`);
+            }
+          }
+        }
+        
+        toast.success('Parent and children updated successfully');
       } else {
-        await axios.post('/api/admin/parent', parentData, {
+        // Add new parent
+        const response = await fetch('http://localhost:5000/admin/parent', {
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
         });
-        toast.success('Parent added successfully');
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+        
+        // Get the parent ID from the response
+        const parentData = await response.json();
+        const parentId = parentData._id || parentData.id;
+        
+        // Add all children
+        if (parentId) {
+          for (const child of children) {
+            const childData = {
+              ...child,
+              parentId
+            };
+            
+            const childResponse = await fetch('http://localhost:5000/admin/student', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(childData)
+            });
+            
+            if (!childResponse.ok) {
+              console.warn(`Failed to add child: ${childResponse.status}`);
+            }
+          }
+        }
+        
+        toast.success('Parent and children added successfully');
       }
+      
       navigate('/admin/parents');
-      */
     } catch (error) {
       console.error('Error saving parent:', error);
       setSubmitting(false);
-      toast.error(`Failed to ${id ? 'update' : 'add'} parent`);
+      toast.error(`Failed to ${id ? 'update' : 'add'} parent: ${error.message}`);
     }
   };
   

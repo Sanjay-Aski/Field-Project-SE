@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { FaPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import DataTable from '../../../components/ui/DataTable';
 import DeleteConfirmModal from '../../../components/ui/DeleteConfirmModal';
@@ -15,36 +14,38 @@ const TeacherList = () => {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        // In a real app, you would fetch actual data from your API
-        // For now, let's create mock data
-        setTimeout(() => {
-          const mockTeachers = Array.from({ length: 20 }, (_, index) => ({
-            _id: `t${index + 1}`,
-            fullName: `Teacher ${index + 1}`,
-            email: `teacher${index + 1}@example.com`,
-            subjects: [
-              { class: Math.floor(Math.random() * 12) + 1, division: ['A', 'B', 'C'][Math.floor(Math.random() * 3)], subject: ['Mathematics', 'Science', 'English', 'Social Studies'][Math.floor(Math.random() * 4)] }
-            ],
-            classTeacher: index % 5 === 0 ? { class: Math.floor(Math.random() * 12) + 1, division: ['A', 'B', 'C'][Math.floor(Math.random() * 3)] } : null
-          }));
-          
-          setTeachers(mockTeachers);
-          setLoading(false);
-        }, 1000);
-        
-        // Uncomment below for actual API call
-        /*
-        const response = await axios.get('/api/admin/teachers', {
+        setLoading(true);
+        // Use real API endpoint instead of mock data
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/admin/teacher', {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         });
-        setTeachers(response.data);
-        setLoading(false);
-        */
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Teachers data:', data);
+        
+        // Ensure that all teachers have the required properties
+        const formattedTeachers = data.map(teacher => ({
+          ...teacher,
+          _id: teacher._id || '', // Ensure _id exists
+          subjects: teacher.subjects || [],
+          classTeacher: teacher.classTeacher || null
+        }));
+        setTeachers(formattedTeachers);
       } catch (error) {
         console.error('Error fetching teachers:', error);
-        toast.error('Failed to load teachers data');
+        toast.error(`Failed to load teachers data: ${error.message}`);
+      } finally {
         setLoading(false);
       }
     };
@@ -62,24 +63,24 @@ const TeacherList = () => {
   
   const confirmDelete = async () => {
     try {
-      // In a real app, you would make an API call to delete the teacher
-      // For now, let's just update the state
-      setTeachers(teachers.filter(teacher => teacher._id !== deleteModal.id));
-      toast.success('Teacher deleted successfully');
-      
-      // Uncomment below for actual API call
-      /*
-      await axios.delete(`/api/admin/teacher/${deleteModal.id}`, {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/admin/teacher/${deleteModal.id}`, {
+        method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
       setTeachers(teachers.filter(teacher => teacher._id !== deleteModal.id));
       toast.success('Teacher deleted successfully');
-      */
     } catch (error) {
       console.error('Error deleting teacher:', error);
-      toast.error('Failed to delete teacher');
+      toast.error(`Failed to delete teacher: ${error.message}`);
     } finally {
       setDeleteModal({ open: false, id: null });
     }

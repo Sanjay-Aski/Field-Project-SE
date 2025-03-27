@@ -16,6 +16,7 @@ import DonationList from './pages/admin/donations/DonationList';
 import TeacherDashboard from './pages/teacher/Dashboard';
 import ParentDashboard from './pages/parent/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import StudentFormSlim from './pages/admin/students/StudentFormSlim';
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -60,6 +61,8 @@ function App() {
             <Route path="parents/add" element={<ParentForm />} />
             <Route path="parents/edit/:id" element={<ParentForm />} />
             <Route path="students" element={<StudentList />} />
+            <Route path="students/add" element={<StudentFormSlim />} />
+            <Route path="students/edit/:id" element={<StudentFormSlim />} />
             <Route path="donations" element={<DonationList />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
