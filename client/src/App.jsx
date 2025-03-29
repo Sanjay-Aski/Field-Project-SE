@@ -6,6 +6,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import NotFound from './pages/NotFound';
 import AdminLayout from './components/layouts/AdminLayout';
+import TeacherLayout from './components/layouts/TeacherLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import TeacherList from './pages/admin/teachers/TeacherList';
 import TeacherForm from './pages/admin/teachers/TeacherForm';
@@ -79,16 +80,20 @@ function App() {
             path="/teacher/*" 
             element={
               <ProtectedRoute allowedRoles={['teacher']}>
-                <div className="min-h-screen bg-sand">
-                  <Routes>
-                    <Route path="dashboard" element={<TeacherDashboard />} />
-                    <Route path="classroom/:classId/:division" element={<ClassroomView />} />
-                    <Route index element={<Navigate to="/teacher/dashboard" replace />} />
-                  </Routes>
-                </div>
+                <TeacherLayout />
               </ProtectedRoute>
-            } 
-          />
+            }
+          >
+            <Route path="dashboard" element={<TeacherDashboard />} />
+            <Route path="classroom/:classId/:division" element={<ClassroomView />} />
+            <Route path="classes" element={<Navigate to="/teacher/dashboard" replace />} />
+            <Route path="attendance" element={<div className="p-4">Attendance Management Page</div>} />
+            <Route path="marksheets" element={<div className="p-4">Marksheets Management Page</div>} />
+            <Route path="forms" element={<div className="p-4">Forms Management Page</div>} />
+            <Route path="chat" element={<div className="p-4">Parent Chat Page</div>} />
+            <Route path="analytics" element={<div className="p-4">Analytics Page</div>} />
+            <Route index element={<Navigate to="/teacher/dashboard" replace />} />
+          </Route>
           
           {/* Protected Parent Routes */}
           <Route 

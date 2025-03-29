@@ -22,7 +22,7 @@ const Navbar = () => {
   };
 
   const navbarClasses = `fixed w-full z-50 transition-all duration-300 ${
-    scrolled ? 'bg-white shadow-md py-2' : 'bg-transparent py-4'
+    scrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'
   }`;
 
   const textColorClass = scrolled ? 'text-gray-800' : 'text-white';
@@ -33,31 +33,31 @@ const Navbar = () => {
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center">
-            <span className={`text-2xl font-bold ${logoColorClass}`}>R.I. Vidya Mandir</span>
+            <span className={`text-2xl font-bold ${logoColorClass} transition-colors`}>R.I. Vidya Mandir</span>
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#about" className={`font-medium ${textColorClass} hover:text-primary-500`}>
+          <div className="hidden md:flex items-center space-x-10">
+            <a href="#about" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
               About
             </a>
-            <a href="#facilities" className={`font-medium ${textColorClass} hover:text-primary-500`}>
+            <a href="#facilities" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
               Facilities
             </a>
-            <a href="#contact" className={`font-medium ${textColorClass} hover:text-primary-500`}>
+            <a href="#contact" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
               Contact
             </a>
             {user ? (
               <Link
                 to={`/${user.role}/dashboard`}
-                className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-primary-600 text-white hover:bg-primary-700 px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
               >
                 Dashboard
               </Link>
             ) : (
               <Link
                 to="/login"
-                className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-primary-600 text-white hover:bg-primary-700 px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
               >
                 <span className="flex items-center">
                   <FaUserCircle className="mr-2" /> Login
@@ -82,8 +82,8 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden mt-4 py-2 bg-white rounded-lg shadow-lg">
-            <div className="flex flex-col space-y-3 px-4 py-2">
+          <div className="md:hidden mt-4 py-3 bg-white rounded-lg shadow-lg">
+            <div className="flex flex-col space-y-4 px-4 py-3">
               <a 
                 href="#about" 
                 className="text-gray-800 hover:text-primary-600 py-2 font-medium"
@@ -108,7 +108,7 @@ const Navbar = () => {
               {user ? (
                 <Link
                   to={`/${user.role}/dashboard`}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium text-center"
+                  className="bg-primary-600 text-white px-4 py-2.5 rounded-lg font-medium text-center mt-2"
                   onClick={() => setIsOpen(false)}
                 >
                   Dashboard
@@ -116,7 +116,7 @@ const Navbar = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium text-center"
+                  className="bg-primary-600 text-white px-4 py-2.5 rounded-lg font-medium text-center mt-2"
                   onClick={() => setIsOpen(false)}
                 >
                   <span className="flex items-center justify-center">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FaUserGraduate, FaCalendarAlt, FaBook, FaClipboardList, FaChartBar, FaEnvelope } from 'react-icons/fa';
+import { FaUserGraduate, FaCalendarAlt, FaBook, FaClipboardList, FaChartBar, FaEnvelope, FaArrowLeft } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const ClassroomView = () => {
@@ -24,16 +24,17 @@ const ClassroomView = () => {
           }
         });
         
+        const data = await response.json();
+        
         if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
+          throw new Error(data.message || `Server responded with ${response.status}`);
         }
         
-        const data = await response.json();
-        setStudents(data);
+        setStudents(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error fetching class students:', error);
-        setError('Failed to load students. Please try again.');
-        toast.error('Failed to load class data');
+        setError('Failed to load students. Please try again later.');
+        toast.error('Failed to load class data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -209,75 +210,89 @@ const ClassroomView = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-secondary-800">
+          Class {classId}-{division}
+        </h1>
+        
+        <Link
+          to="/teacher/dashboard"
+          className="flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <FaArrowLeft className="mr-2" /> Back to Dashboard
+        </Link>
+      </div>
+      
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Class {classId}-{division}</h2>
         <p className="text-gray-600">Manage your classroom, students, attendance, and marksheets</p>
       </div>
       
       <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              className={`${
-                activeTab === 'students'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              onClick={() => setActiveTab('students')}
-            >
-              <FaUserGraduate className="inline-block mr-2" />
-              Students
-            </button>
-            
-            <button
-              className={`${
-                activeTab === 'attendance'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              onClick={() => setActiveTab('attendance')}
-            >
-              <FaCalendarAlt className="inline-block mr-2" />
-              Attendance
-            </button>
-            
-            <button
-              className={`${
-                activeTab === 'marksheet'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              onClick={() => setActiveTab('marksheet')}
-            >
-              <FaBook className="inline-block mr-2" />
-              Marksheets
-            </button>
-            
-            <button
-              className={`${
-                activeTab === 'forms'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              onClick={() => setActiveTab('forms')}
-            >
-              <FaClipboardList className="inline-block mr-2" />
-              Forms
-            </button>
-            
-            <button
-              className={`${
-                activeTab === 'analytics'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-              onClick={() => setActiveTab('analytics')}
-            >
-              <FaChartBar className="inline-block mr-2" />
-              Analytics
-            </button>
-          </nav>
+        <div className="bg-white rounded-lg shadow-md">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex flex-wrap">
+              <button
+                className={`${
+                  activeTab === 'students'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+                onClick={() => setActiveTab('students')}
+              >
+                <FaUserGraduate className="mr-2" />
+                Students
+              </button>
+              
+              <button
+                className={`${
+                  activeTab === 'attendance'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+                onClick={() => setActiveTab('attendance')}
+              >
+                <FaCalendarAlt className="mr-2" />
+                Attendance
+              </button>
+              
+              <button
+                className={`${
+                  activeTab === 'marksheet'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+                onClick={() => setActiveTab('marksheet')}
+              >
+                <FaBook className="mr-2" />
+                Marksheets
+              </button>
+              
+              <button
+                className={`${
+                  activeTab === 'forms'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+                onClick={() => setActiveTab('forms')}
+              >
+                <FaClipboardList className="mr-2" />
+                Forms
+              </button>
+              
+              <button
+                className={`${
+                  activeTab === 'analytics'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm flex items-center`}
+                onClick={() => setActiveTab('analytics')}
+              >
+                <FaChartBar className="mr-2" />
+                Analytics
+              </button>
+            </nav>
+          </div>
         </div>
       </div>
       

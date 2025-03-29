@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
-  FaUserTie, FaBook, FaUsers, FaCalendarAlt, FaChalkboardTeacher, 
-  FaSignOutAlt, FaClipboardList, FaBars, FaTimes, FaChartBar 
+  FaUserTie, FaChild, FaUsers, FaCalendarAlt, FaClipboardList, 
+  FaEnvelope, FaSignOutAlt, FaBars, FaTimes 
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
-const TeacherLayout = () => {
-  const { logout, user } = useAuth();
+const ParentLayout = () => {
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -25,13 +25,11 @@ const TeacherLayout = () => {
   };
   
   const navItems = [
-    { path: '/teacher/dashboard', icon: <FaUserTie />, label: 'Dashboard' },
-    { path: '/teacher/classes', icon: <FaChalkboardTeacher />, label: 'My Classes' },
-    { path: '/teacher/attendance', icon: <FaCalendarAlt />, label: 'Attendance' },
-    { path: '/teacher/marksheets', icon: <FaBook />, label: 'Marksheets' },
-    { path: '/teacher/forms', icon: <FaClipboardList />, label: 'Forms' },
-    { path: '/teacher/chat', icon: <FaUsers />, label: 'Parent Chat' },
-    { path: '/teacher/analytics', icon: <FaChartBar />, label: 'Analytics' }
+    { path: '/parent/dashboard', icon: <FaUserTie />, label: 'Dashboard' },
+    { path: '/parent/children', icon: <FaChild />, label: 'My Children' },
+    { path: '/parent/chat', icon: <FaEnvelope />, label: 'Messages' },
+    { path: '/parent/forms/pending', icon: <FaClipboardList />, label: 'Forms' },
+    { path: '/parent/teachers', icon: <FaUsers />, label: 'Teachers' }
   ];
   
   return (
@@ -41,8 +39,8 @@ const TeacherLayout = () => {
         {/* Mobile Menu Toggle */}
         <div className="md:hidden p-4 flex items-center justify-between">
           <div className="flex items-center">
-            <FaChalkboardTeacher className="mr-2 h-6 w-6" />
-            <h1 className="text-xl font-bold">Teacher Portal</h1>
+            <FaUserTie className="mr-2 h-6 w-6" />
+            <h1 className="text-xl font-bold">Parent Portal</h1>
           </div>
           <button onClick={toggleMobileMenu} className="text-white">
             {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
@@ -52,8 +50,8 @@ const TeacherLayout = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center justify-between p-4 container mx-auto">
           <div className="flex items-center">
-            <FaChalkboardTeacher className="mr-2 h-6 w-6 text-white" />
-            <h1 className="text-xl font-bold">Teacher Portal</h1>
+            <FaUserTie className="mr-2 h-6 w-6 text-white" />
+            <h1 className="text-xl font-bold">Parent Portal</h1>
           </div>
           
           <div className="flex space-x-6">
@@ -67,29 +65,24 @@ const TeacherLayout = () => {
                   }`
                 }
               >
-                <span className="mr-1">{item.icon}</span>
+                <span className="mr-2">{item.icon}</span>
                 {item.label}
               </NavLink>
             ))}
+            <button
+              onClick={handleLogout}
+              className="flex items-center text-white hover:text-red-300 transition-colors"
+            >
+              <FaSignOutAlt className="mr-2" />
+              Logout
+            </button>
           </div>
-          
-          <button
-            onClick={handleLogout}
-            className="flex items-center text-white hover:text-primary-200 transition-colors"
-          >
-            <FaSignOutAlt className="mr-1" />
-            Logout
-          </button>
         </div>
       </div>
       
-      {/* Mobile Menu Dropdown */}
-      <div 
-        className={`${
-          isMobileMenuOpen ? 'block' : 'hidden'
-        } md:hidden bg-white shadow-md`}
-      >
-        <nav className="py-2">
+      {/* Mobile Navigation Menu */}
+      <div className={`md:hidden bg-white shadow-lg transition-all ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+        <nav className="container mx-auto">
           <ul>
             {navItems.map((item) => (
               <li key={item.path}>
@@ -98,7 +91,7 @@ const TeacherLayout = () => {
                   onClick={closeMobileMenu}
                   className={({ isActive }) =>
                     `flex items-center py-3 px-6 hover:bg-gray-100 transition-colors ${
-                      isActive ? 'text-primary-600 font-semibold bg-gray-50' : 'text-gray-800'
+                      isActive ? 'text-primary-600 font-medium' : 'text-gray-800'
                     }`
                   }
                 >
@@ -128,4 +121,4 @@ const TeacherLayout = () => {
   );
 };
 
-export default TeacherLayout;
+export default ParentLayout;
