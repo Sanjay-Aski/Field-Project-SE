@@ -970,6 +970,32 @@ const assignAttendanceFromExcel = async (req, res) => {
         });
     }
 };
+
+const getTeacherProfile = async (req, res) => {
+    try {
+        const teacherId = req.teacher._id;
+        
+        // Find teacher and exclude password
+        const teacher = await Teacher.findById(teacherId).select('-password');
+        
+        if (!teacher) {
+            return res.status(404).send({ error: 'Teacher not found.' });
+        }
+        
+        res.status(200).json({
+            success: true,
+            teacher
+        });
+    } catch (error) {
+        console.error('Error fetching teacher profile:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching teacher profile', 
+            error: error.message 
+        });
+    }
+};
+
 export { 
     login, 
     assignMarksheet, 
@@ -986,6 +1012,11 @@ export {
     getClassStudents,
     sendMessageToParent,
     getChatHistory,
-    getNotes,getSentForms,setWorkingDaysFromExcel,assignMarksheetFromExcel,assignAttendanceFromExcel    
+    getNotes,
+    getSentForms,
+    setWorkingDaysFromExcel,
+    assignMarksheetFromExcel,
+    assignAttendanceFromExcel,
+    getTeacherProfile
 };
 

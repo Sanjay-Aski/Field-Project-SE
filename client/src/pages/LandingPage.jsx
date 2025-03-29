@@ -1,58 +1,93 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaGraduationCap, FaChalkboardTeacher, FaUsers, FaChartLine } from 'react-icons/fa';
+import { FaUserGraduate, FaChalkboardTeacher, FaUsers, FaBook, FaMedal, FaSchool } from 'react-icons/fa';
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-sand">
-      {/* Header/Navigation */}
-      <header className="bg-cream shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <FaGraduationCap className="h-8 w-8 text-primary-500" />
-            <span className="ml-2 text-xl font-bold text-secondary-800">R. I. Vidya Mandir</span>
+    <div className="bg-gradient-to-b from-white to-sand min-h-screen">
+      {/* Hero Section */}
+      <header className="bg-primary-800 text-white">
+        <div className="container mx-auto px-6 py-12 md:py-24 md:flex md:items-center">
+          <div className="md:w-1/2 md:pr-8">
+            <h1 className="text-3xl md:text-5xl font-bold mb-4">
+              Welcome to R.I. Vidya Mandir
+            </h1>
+            <p className="text-lg md:text-xl mb-8">
+              Established in 1994, empowering young minds through quality education since 26 years.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/login"
+                className="bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-center transition-all"
+              >
+                Sign in to Portal
+              </Link>
+              <a
+                href="#about"
+                className="border-2 border-white hover:bg-white hover:text-primary-800 text-white font-bold py-3 px-6 rounded-lg text-center transition-all"
+              >
+                Learn More
+              </a>
+            </div>
           </div>
-          <div>
-            <Link 
-              to="/login" 
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-secondary-800 bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Login
-            </Link>
+          <div className="md:w-1/2 mt-8 md:mt-0">
+            <img 
+              src="/school-building.jpg" 
+              alt="R.I. Vidya Mandir School Building" 
+              className="rounded-lg shadow-xl"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://via.placeholder.com/600x400?text=R.I.+Vidya+Mandir';
+              }}
+            />
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-500 to-primary-600 py-16 text-secondary-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="md:flex md:items-center md:justify-between">
-            <div className="md:w-1/2">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Streamline Your Educational Management
-              </h1>
-              <p className="text-xl text-secondary-700 mb-8">
-                SchoolTrack connects administrators, teachers, and parents in one comprehensive platform.
-              </p>
-              <div className="space-x-4">
-                <Link 
-                  to="/login" 
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-secondary-800 bg-cream hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Get Started
-                </Link>
-                <Link 
-                  to="/admin/register" 
-                  className="inline-flex items-center px-6 py-3 border border-secondary-800 text-base font-medium rounded-md text-secondary-800 bg-opacity-30 hover:bg-opacity-40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                >
-                  Admin Registration
-                </Link>
-              </div>
+      {/* About Section */}
+      <section id="about" className="py-16 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">About Our School</h2>
+            <div className="w-20 h-1 bg-primary-600 mx-auto"></div>
+          </div>
+          
+          <div className="md:flex md:items-center md:gap-12">
+            <div className="md:w-1/2 mb-8 md:mb-0">
+              <img 
+                src="/students.jpg" 
+                alt="Happy students at R.I. Vidya Mandir" 
+                className="rounded-lg shadow-lg w-full"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/600x400?text=Our+Students';
+                }}
+              />
             </div>
-            <div className="hidden md:block md:w-1/2">
-              {/* Placeholder for a hero image */}
-              <div className="w-full h-80 bg-cream bg-opacity-20 rounded-lg flex items-center justify-center">
-                <FaGraduationCap className="h-32 w-32 text-secondary-800 opacity-70" />
+            <div className="md:w-1/2">
+              <p className="text-gray-600 mb-6">
+                R.I. Vidya Mandir was established in 1994 and is managed privately as an unaided institution. Located in the urban area of Kalyan Dombivli-URC1 block of Thane district, Maharashtra, our school provides education from Class 1 to Class 7.
+              </p>
+              <p className="text-gray-600 mb-6">
+                We are a co-educational institution with an attached pre-primary section. English is our medium of instruction, and we take pride in providing quality education in a nurturing environment.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <FaMedal className="text-primary-600 text-xl mr-3" />
+                  <span>Established 1994</span>
+                </div>
+                <div className="flex items-center">
+                  <FaSchool className="text-primary-600 text-xl mr-3" />
+                  <span>English Medium</span>
+                </div>
+                <div className="flex items-center">
+                  <FaUsers className="text-primary-600 text-xl mr-3" />
+                  <span>Co-educational</span>
+                </div>
+                <div className="flex items-center">
+                  <FaChalkboardTeacher className="text-primary-600 text-xl mr-3" />
+                  <span>Experienced Faculty</span>
+                </div>
               </div>
             </div>
           </div>
@@ -60,81 +95,117 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-cream">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 bg-sand">
+        <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-secondary-900">Features for Every Role</h2>
-            <p className="mt-4 text-xl text-secondary-500">
-              SchoolTrack provides tailored functionality for administrators, teachers, and parents.
-            </p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">Our Facilities</h2>
+            <div className="w-20 h-1 bg-primary-600 mx-auto"></div>
           </div>
-
+          
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Admin Features */}
-            <div className="bg-sand rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="inline-flex items-center justify-center p-3 bg-primary-100 rounded-lg text-primary-600 mb-4">
-                <FaUsers className="h-6 w-6" />
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaBook className="text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-secondary-900 mb-2">For Administrators</h3>
-              <ul className="space-y-2 text-secondary-600">
-                <li>• Manage teacher & parent accounts</li>
-                <li>• Track student records</li>
-                <li>• Oversee donation system</li>
-                <li>• Efficient search functionality</li>
-              </ul>
+              <h3 className="text-xl font-bold mb-2">Library</h3>
+              <p className="text-gray-600">
+                Our school library houses 300 books for students to explore and expand their knowledge.
+              </p>
             </div>
-
-            {/* Teacher Features */}
-            <div className="bg-sand rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="inline-flex items-center justify-center p-3 bg-primary-100 rounded-lg text-primary-600 mb-4">
-                <FaChalkboardTeacher className="h-6 w-6" />
+            
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaSchool className="text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-secondary-900 mb-2">For Teachers</h3>
-              <ul className="space-y-2 text-secondary-600">
-                <li>• Assign & manage marksheets</li>
-                <li>• Track student attendance</li>
-                <li>• Create dynamic forms</li>
-                <li>• Communicate with parents</li>
-                <li>• Excel data uploads</li>
-              </ul>
+              <h3 className="text-xl font-bold mb-2">Infrastructure</h3>
+              <p className="text-gray-600">
+                6 well-maintained classrooms, proper sanitation facilities, and a playground for physical activities.
+              </p>
             </div>
-
-            {/* Parent Features */}
-            <div className="bg-sand rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="inline-flex items-center justify-center p-3 bg-primary-100 rounded-lg text-primary-600 mb-4">
-                <FaChartLine className="h-6 w-6" />
+            
+            <div className="bg-white rounded-lg shadow-md p-6 text-center">
+              <div className="w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaUserGraduate className="text-2xl" />
               </div>
-              <h3 className="text-xl font-semibold text-secondary-900 mb-2">For Parents</h3>
-              <ul className="space-y-2 text-secondary-600">
-                <li>• View academic records</li>
-                <li>• Track attendance</li>
-                <li>• Complete teacher forms</li>
-                <li>• Teacher communication</li>
-                <li>• Manage donations</li>
-              </ul>
+              <h3 className="text-xl font-bold mb-2">Pre-Primary Section</h3>
+              <p className="text-gray-600">
+                Dedicated pre-primary section with 3 teachers to provide early childhood education.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-16 bg-gray-100">
+        <div className="container mx-auto px-6">
+          <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+            <div className="md:flex">
+              <div className="p-8 md:w-1/2 bg-primary-700 text-white">
+                <h2 className="text-3xl font-bold mb-6">Contact Information</h2>
+                <div className="space-y-4">
+                  <p>
+                    <strong>Address:</strong><br />
+                    Ward No.102, Kalyan Dombivli-URC1<br />
+                    Thane, Maharashtra 421201
+                  </p>
+                  <p>
+                    <strong>UDISE Code:</strong> 27210610202
+                  </p>
+                  <p>
+                    <strong>Email:</strong> contact@rividyamandir.edu.in
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> Please contact school administration
+                  </p>
+                </div>
+              </div>
+              <div className="p-8 md:w-1/2">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">Our Location</h2>
+                <div className="h-64 bg-gray-200 rounded-lg overflow-hidden">
+                  {/* Placeholder for map or school image */}
+                  <div className="h-full flex items-center justify-center bg-gray-200 text-gray-500">
+                    <p className="text-center p-4">
+                      R.I. Vidya Mandir is located in Ward No.102, Kalyan Dombivli-URC1, Thane District, Maharashtra
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-secondary-800 text-white py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <div className="flex items-center">
-                <FaGraduationCap className="h-6 w-6" />
-                <span className="ml-2 text-lg font-bold">SchoolTrack</span>
+      <footer className="bg-primary-900 text-white py-8">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between">
+            <div className="mb-6 md:mb-0">
+              <h3 className="text-xl font-bold mb-4">R.I. Vidya Mandir</h3>
+              <p className="text-primary-200">Empowering young minds since 1994</p>
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="text-lg font-bold mb-4">Quick Links</h4>
+                <ul className="space-y-2">
+                  <li><a href="#about" className="text-primary-200 hover:text-white">About Us</a></li>
+                  <li><a href="#" className="text-primary-200 hover:text-white">Academic Programs</a></li>
+                  <li><a href="#" className="text-primary-200 hover:text-white">Admissions</a></li>
+                  <li><Link to="/login" className="text-primary-200 hover:text-white">Portal Login</Link></li>
+                </ul>
               </div>
-              <p className="text-secondary-400 text-sm mt-1">
-                Educational Management System
-              </p>
+              <div>
+                <h4 className="text-lg font-bold mb-4">Legal</h4>
+                <ul className="space-y-2">
+                  <li><a href="#" className="text-primary-200 hover:text-white">Privacy Policy</a></li>
+                  <li><a href="#" className="text-primary-200 hover:text-white">Terms of Service</a></li>
+                </ul>
+              </div>
             </div>
-            <div className="text-center md:text-right">
-              <p className="text-secondary-400 text-sm">
-                © {new Date().getFullYear()} SchoolTrack. All rights reserved.
-              </p>
-            </div>
+          </div>
+          <div className="border-t border-primary-800 mt-8 pt-8 text-center text-primary-300">
+            <p>&copy; {new Date().getFullYear()} R.I. Vidya Mandir. All rights reserved.</p>
+            <p className="mt-2 text-xs">Powered by SchoolTrack Management System</p>
           </div>
         </div>
       </footer>

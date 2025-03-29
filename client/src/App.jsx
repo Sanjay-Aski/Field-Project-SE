@@ -14,9 +14,11 @@ import ParentForm from './pages/admin/parents/ParentForm';
 import StudentList from './pages/admin/students/StudentList';
 import DonationList from './pages/admin/donations/DonationList';
 import TeacherDashboard from './pages/teacher/Dashboard';
+import ClassroomView from './pages/teacher/ClassroomView';
 import ParentDashboard from './pages/parent/Dashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import StudentFormSlim from './pages/admin/students/StudentFormSlim';
+import Navbar from './components/ui/Navbar';
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -39,7 +41,12 @@ function App() {
       <div className="min-h-screen bg-sand">
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={
+            <>
+              <Navbar />
+              <LandingPage />
+            </>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/register" element={<AdminRegister />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -69,10 +76,16 @@ function App() {
           
           {/* Protected Teacher Routes */}
           <Route 
-            path="/teacher/dashboard/*" 
+            path="/teacher/*" 
             element={
               <ProtectedRoute allowedRoles={['teacher']}>
-                <TeacherDashboard />
+                <div className="min-h-screen bg-sand">
+                  <Routes>
+                    <Route path="dashboard" element={<TeacherDashboard />} />
+                    <Route path="classroom/:classId/:division" element={<ClassroomView />} />
+                    <Route index element={<Navigate to="/teacher/dashboard" replace />} />
+                  </Routes>
+                </div>
               </ProtectedRoute>
             } 
           />

@@ -94,24 +94,15 @@ const Login = () => {
   
   return (
     <AuthCard 
-      title="Welcome Back" 
-      subtitle="Sign in to access your account and manage school activities"
+      title="R.I. Vidya Mandir Portal" 
+      subtitle="Sign in to access the school management system"
       footer={
-        <>
-          {formData.role === 'admin' && (
-            <p>
-              Don't have an admin account?{' '}
-              <Link to="/admin/register" className="text-primary-600 hover:underline font-medium">
-                Register here
-              </Link>
-            </p>
-          )}
-          <p className="mt-2">
-            <Link to="/forgot-password" className="text-primary-600 hover:underline text-sm">
-              Forgot password?
-            </Link>
-          </p>
-        </>
+        <p>
+          Forgot your password?{' '}
+          <Link to="/forgot-password" className="text-primary-600 hover:underline font-medium">
+            Reset it here
+          </Link>
+        </p>
       }
     >
       <h2 className="text-xl font-semibold text-secondary-800 mb-6">Login to your account</h2>

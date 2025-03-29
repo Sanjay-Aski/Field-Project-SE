@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 
+// Load environment variables from .env file
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,10 +20,16 @@ const port = process.env.PORT || 4000;
 
 app.use(cors());
 
-mongoose.connect(process.env.MONGO_URI, {
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Log environment variables for debugging (remove in production)
+console.log('MongoDB URI:', process.env.MONGO_URI ? 'URI exists' : 'URI missing');
+
+// Connect to MongoDB with error handling
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Please check your .env file and ensure MONGO_URI is correctly set');
+});
 
 app.use(express.json());
 

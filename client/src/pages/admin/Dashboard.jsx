@@ -102,8 +102,42 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-secondary-800 mb-6">Admin Dashboard</h1>
+    <div className="p-6 bg-sand min-h-screen">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-secondary-800 mb-2">R.I. Vidya Mandir Dashboard</h1>
+        <p className="text-gray-600">Welcome to the SchoolTrack management system for R.I. Vidya Mandir.</p>
+      </div>
+      
+      {/* School Info Card */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h2 className="text-xl font-semibold text-primary-700 mb-4">School Information</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Established</h3>
+            <p className="text-lg">1994</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">UDISE Code</h3>
+            <p className="text-lg">27210610202</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Location</h3>
+            <p className="text-lg">Kalyan Dombivli-URC1, Thane</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">School Type</h3>
+            <p className="text-lg">Co-educational (Class 1-7)</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Medium</h3>
+            <p className="text-lg">English</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Management</h3>
+            <p className="text-lg">Private Unaided</p>
+          </div>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         {statCards.map((card, index) => (
