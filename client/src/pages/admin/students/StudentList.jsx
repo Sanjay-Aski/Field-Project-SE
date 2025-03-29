@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { FaUserGraduate, FaUsers, FaSearch } from 'react-icons/fa';
 import DataTable from '../../../components/ui/DataTable';
 import { toast } from 'react-toastify';
@@ -12,42 +11,62 @@ const StudentList = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        // In a real app, you would fetch actual data from your API
-        // For now, let's create mock data
-        setTimeout(() => {
-          const mockStudents = Array.from({ length: 30 }, (_, index) => ({
-            _id: `s${index + 1}`,
-            fullName: `Student ${index + 1}`,
-            roll: Math.floor(Math.random() * 50) + 1,
-            class: Math.floor(Math.random() * 12) + 1,
-            division: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
-            gender: ['Male', 'Female'][Math.floor(Math.random() * 2)],
-            dob: new Date(2000 + Math.floor(Math.random() * 15), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0],
-            parentId: {
-              _id: `p${Math.floor(index / 2) + 1}`,
-              fullName: `Parent ${Math.floor(index / 2) + 1}`,
-              email: `parent${Math.floor(index / 2) + 1}@example.com`,
-              phoneNo: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`
-            }
-          }));
-          
-          setStudents(mockStudents);
-          setLoading(false);
-        }, 1000);
-        
-        // Uncomment below for actual API call
-        /*
-        const response = await axios.get('/api/admin/students', {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/admin/student', {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         });
-        setStudents(response.data);
-        setLoading(false);
-        */
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Students data:', data);
+        
+        // Format the student data
+        const formattedStudents = await Promise.all(data.map(async (student) => {
+          // Fetch parent information if parentId exists
+          if (student.parentId) {
+            try {
+              const parentResponse = await fetch(`http://localhost:5000/admin/parent/${student.parentId}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (parentResponse.ok) {
+                const parentData = await parentResponse.json();
+                return {
+                  ...student,
+                  parentId: {
+                    _id: parentData._id,
+                    fullName: parentData.fullName,
+                    email: parentData.email,
+                    phoneNo: parentData.phoneNo
+                  }
+                };
+              }
+            } catch (error) {
+              console.error('Error fetching parent:', error);
+            }
+          }
+          
+          return student;
+        }));
+        
+        setStudents(formattedStudents);
       } catch (error) {
         console.error('Error fetching students:', error);
-        toast.error('Failed to load students data');
+        toast.error(`Failed to load students data: ${error.message}`);
+      } finally {
         setLoading(false);
       }
     };
@@ -74,11 +93,15 @@ const StudentList = () => {
       label: 'Parent',
       sortable: false,
       render: (student) => (
-        <div>
-          <div className="font-medium">{student.parentId.fullName}</div>
-          <div className="text-xs text-gray-500">{student.parentId.email}</div>
-          <div className="text-xs text-gray-500">{student.parentId.phoneNo}</div>
-        </div>
+        student.parentId ? (
+          <div>
+            <div className="font-medium">{student.parentId.fullName}</div>
+            <div className="text-xs text-gray-500">{student.parentId.email}</div>
+            <div className="text-xs text-gray-500">{student.parentId.phoneNo}</div>
+          </div>
+        ) : (
+          <span className="text-gray-400">No parent assigned</span>
+        )
       )
     }
   ];

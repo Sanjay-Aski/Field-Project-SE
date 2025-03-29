@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { FaPlus, FaEdit, FaTrashAlt, FaChild } from 'react-icons/fa';
 import DataTable from '../../../components/ui/DataTable';
 import DeleteConfirmModal from '../../../components/ui/DeleteConfirmModal';
@@ -15,43 +14,37 @@ const ParentList = () => {
   useEffect(() => {
     const fetchParents = async () => {
       try {
-        // In a real app, you would fetch actual data from your API
-        // For now, let's create mock data
-        setTimeout(() => {
-          const mockParents = Array.from({ length: 20 }, (_, index) => ({
-            _id: `p${index + 1}`,
-            fullName: `Parent ${index + 1}`,
-            email: `parent${index + 1}@example.com`,
-            phoneNo: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-            address: `Address ${index + 1}, Some City`,
-            children: Array.from(
-              { length: Math.floor(Math.random() * 3) + 1 }, 
-              (_, i) => ({ 
-                _id: `s${index}${i}`, 
-                fullName: `Student ${index}${i}`, 
-                class: Math.floor(Math.random() * 12) + 1,
-                division: ['A', 'B', 'C'][Math.floor(Math.random() * 3)]
-              })
-            )
-          }));
-          
-          setParents(mockParents);
-          setLoading(false);
-        }, 1000);
-        
-        // Uncomment below for actual API call
-        /*
-        const response = await axios.get('/api/admin/parents', {
+        setLoading(true);
+        // Use real API endpoint instead of mock data
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/admin/parent', {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
         });
-        setParents(response.data);
-        setLoading(false);
-        */
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Parents data:', data);
+        
+        // Ensure that all parents have the required properties
+        const formattedParents = data.map(parent => ({
+          ...parent,
+          _id: parent._id || '', // Ensure _id exists
+          children: parent.children || []
+        }));
+        setParents(formattedParents);
       } catch (error) {
         console.error('Error fetching parents:', error);
-        toast.error('Failed to load parents data');
+        toast.error(`Failed to load parents data: ${error.message}`);
+      } finally {
         setLoading(false);
       }
     };
@@ -69,24 +62,24 @@ const ParentList = () => {
   
   const confirmDelete = async () => {
     try {
-      // In a real app, you would make an API call to delete the parent
-      // For now, let's just update the state
-      setParents(parents.filter(parent => parent._id !== deleteModal.id));
-      toast.success('Parent deleted successfully');
-      
-      // Uncomment below for actual API call
-      /*
-      await axios.delete(`/api/admin/parent/${deleteModal.id}`, {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/admin/parent/${deleteModal.id}`, {
+        method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
       setParents(parents.filter(parent => parent._id !== deleteModal.id));
       toast.success('Parent deleted successfully');
-      */
     } catch (error) {
       console.error('Error deleting parent:', error);
-      toast.error('Failed to delete parent');
+      toast.error(`Failed to delete parent: ${error.message}`);
     } finally {
       setDeleteModal({ open: false, id: null });
     }

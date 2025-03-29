@@ -7,9 +7,22 @@ import {
     addParent,
     removeParent,
     addStudent,
-    removeStudent,    getAllDonations,
+    removeStudent,
+    getAllDonations,
     getPendingDonations,
-    assignDonation,updateParent,updateTeacher,updateStudent,searchParents,searchTeachers,searchStudents
+    assignDonation,
+    updateParent,
+    updateTeacher,
+    updateStudent,
+    searchParents,
+    searchTeachers,
+    searchStudents,
+    getTeacherById,
+    getAllTeachers,
+    getParentById,
+    getAllParents,
+    getStudentById,
+    getAllStudents
 } from '../admin/admin_controller.js';
 
 import authMiddleware from './admin_middleware.js';
@@ -34,6 +47,16 @@ router.post('/search/parents', authMiddleware, searchParents);
 router.post('/search/teachers', authMiddleware, searchTeachers); 
 router.post('/search/students', authMiddleware, searchStudents); 
 
+// Add these routes for teacher management
+router.get('/teacher/:id', authMiddleware, getTeacherById);
+router.get('/teacher', authMiddleware, getAllTeachers);
 
+// Add these routes for parent management
+router.get('/parent/:id', authMiddleware, getParentById);
+router.get('/parent', authMiddleware, getAllParents);
+
+// Add these routes for student management
+router.get('/student/:id', authMiddleware, getStudentById);
+router.get('/student', authMiddleware, getAllStudents);
 
 export default router;

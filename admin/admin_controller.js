@@ -402,6 +402,80 @@ const searchStudents = async (req, res) => {
         res.status(500).json({ error: 'Error searching students' });
     }
 };
+
+// Add this function to get a single teacher by ID
+const getTeacherById = async (req, res) => {
+    try {
+        const teacher = await Teacher.findById(req.params.id);
+        if (!teacher) {
+            return res.status(404).json({ error: 'Teacher not found' });
+        }
+        res.status(200).json(teacher);
+    } catch (error) {
+        console.error('Error fetching teacher:', error);
+        res.status(500).json({ error: 'Error fetching teacher' });
+    }
+};
+
+// Add this function to get all teachers 
+const getAllTeachers = async (req, res) => {
+    try {
+        const teachers = await Teacher.find({});
+        res.status(200).json(teachers);
+    } catch (error) {
+        console.error('Error fetching all teachers:', error);
+        res.status(500).json({ error: 'Error fetching teachers' });
+    }
+};
+
+// Add these functions for parent management
+const getParentById = async (req, res) => {
+    try {
+        const parent = await Parent.findById(req.params.id).populate('children');
+        if (!parent) {
+            return res.status(404).json({ error: 'Parent not found' });
+        }
+        res.status(200).json(parent);
+    } catch (error) {
+        console.error('Error fetching parent:', error);
+        res.status(500).json({ error: 'Error fetching parent' });
+    }
+};
+
+const getAllParents = async (req, res) => {
+    try {
+        const parents = await Parent.find({}).populate('children');
+        res.status(200).json(parents);
+    } catch (error) {
+        console.error('Error fetching all parents:', error);
+        res.status(500).json({ error: 'Error fetching parents' });
+    }
+};
+
+// Add these functions for student management
+const getStudentById = async (req, res) => {
+    try {
+        const student = await Student.findById(req.params.id);
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+        res.status(200).json(student);
+    } catch (error) {
+        console.error('Error fetching student:', error);
+        res.status(500).json({ error: 'Error fetching student' });
+    }
+};
+
+const getAllStudents = async (req, res) => {
+    try {
+        const students = await Student.find({});
+        res.status(200).json(students);
+    } catch (error) {
+        console.error('Error fetching all students:', error);
+        res.status(500).json({ error: 'Error fetching students' });
+    }
+};
+
 export {
     registerAdmin,
     loginAdmin,
@@ -419,5 +493,11 @@ export {
     updateStudent,
     searchParents,
     searchTeachers,
-    searchStudents
+    searchStudents,
+    getTeacherById,
+    getAllTeachers,
+    getParentById,
+    getAllParents,
+    getStudentById,
+    getAllStudents
 };

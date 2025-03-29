@@ -29,49 +29,35 @@ const TeacherForm = () => {
     if (id) {
       const fetchTeacher = async () => {
         try {
-          // In a real app, you would fetch actual data from your API
-          // For now, let's create mock data
-          setTimeout(() => {
-            const mockTeacher = {
-              _id: id,
-              fullName: `Teacher ${id.slice(1)}`,
-              email: `teacher${id.slice(1)}@example.com`,
-              subjects: [
-                { class: 10, division: 'A', subject: 'Mathematics' },
-                { class: 11, division: 'B', subject: 'Physics' }
-              ],
-              classTeacher: { class: 10, division: 'A' }
-            };
-            
-            setFormData({
-              ...mockTeacher,
-              password: '' // Don't populate password field
-            });
-            
-            setIsClassTeacher(!!mockTeacher.classTeacher);
-            setLoading(false);
-          }, 800);
+          setLoading(true);
+          const token = localStorage.getItem('token');
           
-          // Uncomment below for actual API call
-          /*
-          const response = await axios.get(`/api/admin/teacher/${id}`, {
+          // Add endpoint to get a teacher by ID in admin_controller.js and admin_route.js
+          const response = await fetch(`http://localhost:5000/admin/teacher/${id}`, {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
             }
           });
           
+          if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
           setFormData({
-            ...response.data,
-            password: '' // Don't populate password field
+            ...data,
+            password: ''
           });
           
-          setIsClassTeacher(!!response.data.classTeacher);
-          setLoading(false);
-          */
+          setIsClassTeacher(!!data.classTeacher);
         } catch (error) {
           console.error('Error fetching teacher:', error);
-          toast.error('Failed to load teacher data');
+          toast.error(`Failed to load teacher data: ${error.message}`);
           navigate('/admin/teachers');
+        } finally {
+          setLoading(false);
         }
       };
       
@@ -210,37 +196,49 @@ const TeacherForm = () => {
         teacherData.classTeacher = null;
       }
       
-      // In a real app, you would make an API call to create/update the teacher
-      // For now, let's just simulate success
-      setTimeout(() => {
-        setSubmitting(false);
-        toast.success(`Teacher ${id ? 'updated' : 'added'} successfully`);
-        navigate('/admin/teachers');
-      }, 1000);
+      const token = localStorage.getItem('token');
       
-      // Uncomment below for actual API call
-      /*
       if (id) {
-        await axios.put(`/api/admin/teacher/${id}`, teacherData, {
+        // Update existing teacher
+        const response = await fetch(`http://localhost:5000/admin/teacher/${id}`, {
+          method: 'PUT',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(teacherData)
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+        
         toast.success('Teacher updated successfully');
       } else {
-        await axios.post('/api/admin/teacher', teacherData, {
+        // Add new teacher
+        const response = await fetch('http://localhost:5000/admin/teacher', {
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(teacherData)
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+        
         toast.success('Teacher added successfully');
       }
+      
       navigate('/admin/teachers');
-      */
     } catch (error) {
       console.error('Error saving teacher:', error);
       setSubmitting(false);
-      toast.error(`Failed to ${id ? 'update' : 'add'} teacher`);
+      toast.error(`Failed to ${id ? 'update' : 'add'} teacher: ${error.message}`);
     }
   };
   
