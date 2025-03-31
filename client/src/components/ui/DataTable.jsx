@@ -235,42 +235,45 @@ const DataTable = ({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        {currentItems.length > 0 ? (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => column.sortable !== false && requestSort(column.key)}
-                  >
-                    {column.label}
-                    {column.sortable !== false && renderSortIcon(column.key)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentItems.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
+      {/* Improved overflow handling with a max-width container and responsive design */}
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-full">
+          {currentItems.length > 0 ? (
+            <table className="min-w-full divide-y divide-gray-200 table-fixed md:table-auto">
+              <thead className="bg-gray-50">
+                <tr>
                   {columns.map((column) => (
-                    <td key={column.key} className="px-6 py-4 whitespace-nowrap">
-                      {column.render ? column.render(item) : item[column.key]}
-                    </td>
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => column.sortable !== false && requestSort(column.key)}
+                    >
+                      {column.label}
+                      {column.sortable !== false && renderSortIcon(column.key)}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="px-6 py-12 text-center text-gray-500">
-            <p>{emptyMessage}</p>
-          </div>
-        )}
+              </thead>
+              
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentItems.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    {columns.map((column) => (
+                      <td key={column.key} className="px-6 py-4 text-sm whitespace-normal break-words">
+                        {column.render ? column.render(item) : item[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="px-6 py-12 text-center text-gray-500">
+              <p>{emptyMessage}</p>
+            </div>
+          )}
+        </div>
       </div>
       
       {renderPagination()}
