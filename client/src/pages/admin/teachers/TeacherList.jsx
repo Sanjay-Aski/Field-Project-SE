@@ -17,7 +17,7 @@ const TeacherList = () => {
         setLoading(true);
         // Use real API endpoint instead of mock data
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/admin/teacher', {
+        const response = await fetch('http://192.168.103.107:5000/admin/teacher', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ const TeacherList = () => {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/admin/teacher/${deleteModal.id}`, {
+      const response = await fetch(`http://192.168.103.107:5000/admin/teacher/${deleteModal.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

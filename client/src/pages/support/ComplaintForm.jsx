@@ -80,15 +80,15 @@ const ComplaintForm = () => {
       const token = user ? localStorage.getItem('token') : null;
       
       // Choose the endpoint based on user role
-      let endpoint = 'http://localhost:5000/support/complaint';
+      let endpoint = 'http://192.168.103.107:5000/support/complaint';
       
       if (user) {
         if (user.role === 'parent') {
-          endpoint = 'http://localhost:5000/parent/support/complaint';
+          endpoint = 'http://192.168.103.107:5000/parent/support/complaint';
         } else if (user.role === 'teacher') {
-          endpoint = 'http://localhost:5000/teacher/support/complaint';
+          endpoint = 'http://192.168.103.107:5000/teacher/support/complaint';
         } else if (user.role === 'admin') {
-          endpoint = 'http://localhost:5000/admin/support/complaint';
+          endpoint = 'http://192.168.103.107:5000/admin/support/complaint';
         }
       }
       

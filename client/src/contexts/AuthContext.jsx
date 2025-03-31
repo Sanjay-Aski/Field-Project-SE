@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { initiateSocket, disconnectSocket } from '../services/socketService';
 
 const AuthContext = createContext();
 
@@ -27,6 +28,8 @@ export const AuthProvider = ({ children }) => {
         
         if (storedRole) {
           setUser({ role: storedRole });
+          // Initialize socket connection for authenticated user
+          initiateSocket();
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
@@ -38,6 +41,11 @@ export const AuthProvider = ({ children }) => {
     };
     
     checkLoggedIn();
+    
+    // Clean up socket connection on unmount
+    return () => {
+      disconnectSocket();
+    };
   }, []);
 
   const login = async (email, password, role) => {
@@ -46,13 +54,13 @@ export const AuthProvider = ({ children }) => {
       
       switch(role) {
         case 'admin':
-          endpoint = '/api/admin/login';
+          endpoint = 'http://192.168.103.107:5000/admin/login';
           break;
         case 'teacher':
-          endpoint = '/api/teacher/login';
+          endpoint = 'http://192.168.103.107:5000/teacher/login';
           break;
         case 'parent':
-          endpoint = '/api/parent/login';
+          endpoint = 'http://192.168.103.107:5000/parent/login';
           break;
         default:
           throw new Error('Invalid role');
@@ -66,6 +74,9 @@ export const AuthProvider = ({ children }) => {
       
       setUser({ role });
       
+      // Initialize socket connection after successful login
+      initiateSocket();
+      
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
@@ -78,7 +89,7 @@ export const AuthProvider = ({ children }) => {
 
   const registerAdmin = async (email, password, adminKey) => {
     try {
-      const response = await axios.post('/api/admin/register', { 
+      const response = await axios.post('http://192.168.103.107:5000/admin/register', { 
         email, 
         password,
         adminKey
@@ -98,6 +109,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Disconnect socket before logout
+    disconnectSocket();
+    
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
     setUser(null);

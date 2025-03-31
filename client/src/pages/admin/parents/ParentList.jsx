@@ -17,7 +17,7 @@ const ParentList = () => {
         setLoading(true);
         // Use real API endpoint instead of mock data
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/admin/parent', {
+        const response = await fetch('http://192.168.103.107:5000/admin/parent', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const ParentList = () => {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/admin/parent/${deleteModal.id}`, {
+      const response = await fetch(`http://192.168.103.107:5000/admin/parent/${deleteModal.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

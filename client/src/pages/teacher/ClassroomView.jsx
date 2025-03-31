@@ -9,6 +9,7 @@ const ClassroomView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('students');
+  const [isClassTeacher, setIsClassTeacher] = useState(false);
 
   useEffect(() => {
     const fetchClassStudents = async () => {
@@ -16,8 +17,7 @@ const ClassroomView = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        // Update the API call to include class and division as query parameters
-        const response = await fetch(`http://localhost:5000/teacher/class-students?class=${classId}&division=${division}`, {
+        const response = await fetch(`http://192.168.103.107:5000/teacher/class-students?class=${classId}&division=${division}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -40,7 +40,30 @@ const ClassroomView = () => {
         setLoading(false);
       }
     };
+
+    const fetchTeacherProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://192.168.103.107:5000/teacher/profile', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch teacher profile: ${response.status}`);
+        }
+        
+        // Set isClassTeacher to true for all teachers
+        setIsClassTeacher(true);
+      } catch (error) {
+        console.error('Error fetching teacher profile:', error);
+      }
+    };
     
+    fetchTeacherProfile();
     fetchClassStudents();
   }, [classId, division]);
   
@@ -129,9 +152,24 @@ const ClassroomView = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-medium text-gray-900">Class Attendance</h3>
           <div className="flex space-x-3">
-            <button className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">Set Working Days</button>
-            <button className="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm">Mark Attendance</button>
-            <button className="px-3 py-1 bg-purple-100 text-purple-800 rounded-md text-sm">Upload Excel</button>
+            <Link 
+              to={`/teacher/attendance?class=${classId}&division=${division}`} 
+              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+            >
+              Set Working Days
+            </Link>
+            <Link 
+              to={`/teacher/attendance?class=${classId}&division=${division}`} 
+              className="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm"
+            >
+              Mark Attendance
+            </Link>
+            <Link 
+              to={`/teacher/attendance?class=${classId}&division=${division}`} 
+              className="px-3 py-1 bg-purple-100 text-purple-800 rounded-md text-sm"
+            >
+              Upload Excel
+            </Link>
           </div>
         </div>
         
@@ -245,6 +283,7 @@ const ClassroomView = () => {
                 Students
               </button>
               
+              {/* Show attendance tab for all teachers */}
               <button
                 className={`${
                   activeTab === 'attendance'

@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import http from 'http';
+import initializeSocketServer from './socket-service.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,6 +19,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 4000;
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = initializeSocketServer(server);
 
 app.use(cors());
 
@@ -48,6 +56,7 @@ app.get('/', (req, res) => {
     res.send('Hello, Nikhil Landing Page kab bana rha hai?');
   });
   
-app.listen(port, '0.0.0.0', () => {
+// Listen on the HTTP server (not the Express app)
+server.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
   });

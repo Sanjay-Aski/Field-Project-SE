@@ -144,15 +144,38 @@ const getAttendanceReport = async (req, res) => {
 
         const student = await Student.findById(studentId);
         if (!student || !parent.children.includes(studentId)) {
-            return res.status(404).send({ error: 'Student not found or not your child.' });
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Student not found or not your child.' 
+            });
         }
 
         const attendance = await Attendance.findOne({ studentId });
+        
+        // Return an empty attendance object if no attendance record exists
+        if (!attendance) {
+            return res.status(200).json({
+                success: true,
+                message: 'No attendance records found',
+                attendance: { 
+                    studentId,
+                    attendance: [] 
+                }
+            });
+        }
 
-        res.status(200).send(attendance);
+        res.status(200).json({
+            success: true,
+            message: 'Attendance data retrieved successfully',
+            ...attendance.toObject()
+        });
     } catch (error) {
         console.error('Error getting attendance report:', error);
-        res.status(500).send({ error: 'Error getting attendance report.' });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error getting attendance report.',
+            message: error.message
+        });
     }
 };
 
@@ -445,6 +468,117 @@ const acknowledgeMessages = async (req, res) => {
     }
 };
 
+const getUnreadMessageCount = async (req, res) => {
+    try {
+        const { teacherId, studentId } = req.body;
+        const parentId = req.parent._id;
+
+        if (!teacherId || !studentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Teacher ID and Student ID are required'
+            });
+        }
+
+        // Count unread messages
+        const unreadCount = await Chat.countDocuments({
+            studentId: studentId,
+            senderId: teacherId,
+            receiverId: parentId,
+            read: false
+        });
+
+        // Get the latest message for preview
+        const latestMessage = await Chat.findOne({
+            studentId: studentId,
+            $or: [
+                { senderId: parentId, receiverId: teacherId },
+                { senderId: teacherId, receiverId: parentId }
+            ]
+        })
+        .sort({ createdAt: -1 })
+        .limit(1);
+
+        res.status(200).json({
+            success: true,
+            count: unreadCount,
+            lastMessage: latestMessage ? latestMessage.message : null,
+            timestamp: latestMessage ? latestMessage.createdAt : null
+        });
+    } catch (error) {
+        console.error('Error getting unread message count:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting unread message count',
+            error: error.message
+        });
+    }
+};
+
+const getUnreadMessageCountAll = async (req, res) => {
+    try {
+        const { studentId } = req.body;
+        const parentId = req.parent._id;
+
+        if (!studentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Student ID is required'
+            });
+        }
+
+        // Count all unread messages for this parent for the specified student
+        const totalUnread = await Chat.countDocuments({
+            studentId: studentId,
+            receiverId: parentId,
+            receiverModel: 'Parent',
+            read: false
+        });
+        
+        // Get unread counts per teacher
+        const unreadByTeacher = await Chat.aggregate([
+            {
+                $match: {
+                    studentId: studentId,
+                    receiverId: parentId,
+                    receiverModel: 'Parent',
+                    read: false
+                }
+            },
+            {
+                $group: {
+                    _id: "$senderId",
+                    unreadCount: { $sum: 1 },
+                    lastMessage: { $last: "$message" },
+                    timestamp: { $last: "$createdAt" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    teacherId: "$_id",
+                    unreadCount: 1,
+                    lastMessage: 1,
+                    timestamp: 1
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            success: true,
+            totalUnread,
+            unreadByTeacher
+        });
+    } catch (error) {
+        console.error('Error getting total unread message count:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting total unread message count',
+            error: error.message
+        });
+    }
+};
+
 const getAllFormsNotFilled = async (req, res) => {
     try {
         const parentId = req.parent._id;
@@ -694,5 +828,7 @@ export {
     getAllFormsNotFilled,
     getNotes,
     getParentProfile,
-    submitComplaint
+    submitComplaint,
+    getUnreadMessageCount,
+    getUnreadMessageCountAll
 };

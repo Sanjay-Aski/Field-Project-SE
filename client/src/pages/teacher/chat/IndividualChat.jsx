@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaSearch, FaPaperPlane, FaEllipsisV, FaPhone, FaVideo, FaUser } from 'react-icons/fa';
+import { FaSearch, FaPaperPlane, FaEllipsisV, FaPhone, FaVideo, FaUser, FaComment } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const IndividualChat = () => {
@@ -10,66 +10,83 @@ const IndividualChat = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
-  
+
   useEffect(() => {
     const fetchContacts = async () => {
       try {
-        // In a real app, fetch contacts from API
-        setTimeout(() => {
-          const mockContacts = [
-            { id: 1, name: 'John Smith', role: 'Parent of Alex Smith', avatar: null, lastActive: 'Online', unread: 2 },
-            { id: 2, name: 'Sarah Johnson', role: 'Parent of Michael Johnson', avatar: null, lastActive: '5m ago', unread: 0 },
-            { id: 3, name: 'David Williams', role: 'Parent of Emma Williams', avatar: null, lastActive: '1h ago', unread: 1 },
-            { id: 4, name: 'Jennifer Brown', role: 'Parent of James Brown', avatar: null, lastActive: '3h ago', unread: 0 },
-            { id: 5, name: 'Robert Davis', role: 'Parent of Olivia Davis', avatar: null, lastActive: 'Yesterday', unread: 0 },
-          ];
-          setContacts(mockContacts);
-          setLoading(false);
-        }, 800);
-        
-        // Uncomment for real API call
-        /*
+        setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/teacher/chat/contacts', {
+
+        // Fetch unread counts and update contacts
+        const response = await fetch('http://192.168.103.107:5000/teacher/chat/unread-counts', {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.success && data.unreadData) {
+            // Update contacts with unread counts and latest messages
+            setContacts(prevContacts => {
+              return prevContacts.map(contact => {
+                const matchingData = data.unreadData.find(
+                  item => item.parentId === contact.id &&
+                          (item.studentId === contact.studentId)
+                );
+
+                if (matchingData) {
+                  return {
+                    ...contact,
+                    unread: matchingData.unreadCount || 0,
+                    lastMessage: matchingData.lastMessage || contact.lastMessage,
+                    lastActive: matchingData.timestamp ? 
+                       formatTimestamp(matchingData.timestamp) : contact.lastActive
+                  };
+                }
+                return contact;
+              }).sort((a, b) => {
+                // Sort by unread messages first, then by last active time
+                if (a.unread !== b.unread) return b.unread - a.unread;
+                if (a.lastActiveTime && b.lastActiveTime) {
+                  return new Date(b.lastActiveTime) - new Date(a.lastActiveTime);
+                }
+                return 0;
+              });
+            });
+          }
         }
-        
-        const data = await response.json();
-        setContacts(data);
-        setLoading(false);
-        */
       } catch (error) {
-        console.error('Error fetching contacts:', error);
-        toast.error('Failed to load contacts');
-        setLoading(false);
+        console.error('Error fetching unread counts:', error);
       }
     };
-    
+
     fetchContacts();
+
+    // Set up an interval to refresh contacts and their unread counts
+    const interval = setInterval(fetchContacts, 30000); // every 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
-  
+
   useEffect(() => {
     // Scroll to bottom of messages when they change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
+
   useEffect(() => {
     if (selectedContact) {
       fetchMessages(selectedContact.id);
     }
   }, [selectedContact]);
-  
+
   const fetchMessages = async (contactId) => {
     try {
       setLoading(true);
-      
+
       // In a real app, fetch messages from API
       setTimeout(() => {
         const mockMessages = [
@@ -84,28 +101,7 @@ const IndividualChat = () => {
         setMessages(mockMessages);
         setLoading(false);
       }, 500);
-      
-      // Uncomment for real API call
-      /*
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/teacher/chat/history`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ parentId: contactId })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setMessages(data);
-      setLoading(false);
-      */
-      
+
       // Update unread count for this contact
       setContacts(prevContacts => 
         prevContacts.map(contact => 
@@ -120,12 +116,12 @@ const IndividualChat = () => {
       setLoading(false);
     }
   };
-  
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (!message.trim() || !selectedContact) return;
-    
+
     // Optimistically add message to UI
     const newMessage = {
       id: Date.now(),
@@ -133,44 +129,25 @@ const IndividualChat = () => {
       text: message,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    
+
     setMessages(prev => [...prev, newMessage]);
     setMessage('');
-    
+
     try {
       // In a real app, send message to API
-      // Uncomment for real API call
-      /*
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/teacher/chat/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          parentId: selectedContact.id,
-          message: message
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
-      }
-      */
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
-      
+
       // Remove the optimistically added message if it fails
       setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
     }
   };
-  
+
   const filteredContacts = contacts.filter(contact => 
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const getInitials = (name) => {
     if (!name) return '';
     return name
@@ -180,7 +157,7 @@ const IndividualChat = () => {
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   if (loading && contacts.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -188,11 +165,11 @@ const IndividualChat = () => {
       </div>
     );
   }
-  
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-secondary-800 mb-6">Individual Chats</h1>
-      
+
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="flex h-[70vh]">
           {/* Contacts List */}
@@ -211,7 +188,7 @@ const IndividualChat = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto">
               {filteredContacts.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
@@ -258,7 +235,7 @@ const IndividualChat = () => {
               )}
             </div>
           </div>
-          
+
           {/* Chat Window */}
           <div className="flex-1 flex flex-col">
             {selectedContact ? (
@@ -294,7 +271,7 @@ const IndividualChat = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 {/* Messages */}
                 <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
                   {loading ? (
@@ -330,7 +307,7 @@ const IndividualChat = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Message Input */}
                 <div className="p-4 border-t">
                   <form onSubmit={handleSendMessage} className="flex space-x-2">

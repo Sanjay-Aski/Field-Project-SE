@@ -172,37 +172,75 @@ const assignAttendance = async (req, res) => {
         const workingDays = monthWorkingRecord.workingDays.map(day => new Date(day));
 
         // Convert presentDates strings into Date objects
-        const convertedPresentDates = presentDates.map(dateStr => new Date(dateStr));
-        const presentSet = new Set(convertedPresentDates.map(d => d.toDateString()));
-        const absentDates = workingDays.filter(day => !presentSet.has(day.toDateString()));
-        const presentPercent = (convertedPresentDates.length / workingDays.length) * 100;
+        const newPresentDates = presentDates.map(dateStr => new Date(dateStr));
 
+        // Find existing attendance record
         let attendanceDoc = await Attendance.findOne({ studentId });
         if (!attendanceDoc) {
             attendanceDoc = new Attendance({ studentId, attendance: [] });
         }
 
+        // Find or create the month record
         let monthRecordInAttendance = attendanceDoc.attendance.find(item => item.month === month);
+        
         if (!monthRecordInAttendance) {
+            // If no attendance record exists for this month, create a new one
+            const absentDates = workingDays.filter(day => 
+                !newPresentDates.some(presentDate => 
+                    presentDate.toDateString() === day.toDateString()
+                )
+            );
+            const presentPercent = (newPresentDates.length / workingDays.length) * 100;
+            
             attendanceDoc.attendance.push({
                 month,
-                presentDates: convertedPresentDates,
+                presentDates: newPresentDates,
                 absentDates,
                 presentpercent: presentPercent
             });
         } else {
-            monthRecordInAttendance.presentDates = convertedPresentDates;
+            // If attendance record exists, merge the new present dates with existing ones
+            // First, collect all existing present dates
+            const existingPresentDates = monthRecordInAttendance.presentDates.map(date => new Date(date));
+            
+            // Combine existing and new present dates, avoiding duplicates
+            const allPresentDates = [...existingPresentDates];
+            
+            // Add new dates that don't already exist
+            newPresentDates.forEach(newDate => {
+                const newDateStr = newDate.toDateString();
+                if (!allPresentDates.some(date => date.toDateString() === newDateStr)) {
+                    allPresentDates.push(newDate);
+                }
+            });
+            
+            // Calculate absent dates (working days that are not in the combined present dates)
+            const presentDateStrings = allPresentDates.map(date => date.toDateString());
+            const absentDates = workingDays.filter(day => 
+                !presentDateStrings.includes(day.toDateString())
+            );
+            
+            // Calculate new percentage
+            const presentPercent = (allPresentDates.length / workingDays.length) * 100;
+            
+            // Update the month record
+            monthRecordInAttendance.presentDates = allPresentDates;
             monthRecordInAttendance.absentDates = absentDates;
             monthRecordInAttendance.presentpercent = presentPercent;
         }
 
         await attendanceDoc.save();
-        res.status(200).send({ message: "Attendance sheet assigned successfully." });
+        res.status(200).send({ 
+            message: "Attendance sheet assigned successfully.",
+            totalPresent: monthRecordInAttendance?.presentDates.length || newPresentDates.length,
+            presentDates: monthRecordInAttendance?.presentDates || newPresentDates
+        });
     } catch (error) {
         console.error("Error assigning attendance sheet:", error);
         res.status(500).send({ error: "Error assigning attendance sheet.", details: error.message });
     }
 };
+
 // 3. Get Attendance Sheet for a Student for a Given Month
 // Query parameters: studentId and month (e.g., /api/teacher/getAttendanceSheet?studentId=xxx&month=March%202025)
 const getAttendance = async (req, res) => {
@@ -532,22 +570,33 @@ const getClassStudents = async (req, res) => {
     try {
         const teacher = req.teacher;
         // Get class and division from query parameters if provided
-        // Otherwise, fall back to the teacher's class teacher assignment
-        const classFilter = req.query.class ? parseInt(req.query.class) : teacher.classTeacher.class;
-        const divisionFilter = req.query.division || teacher.classTeacher.division;
+        const classFilter = req.query.class ? req.query.class : null;
+        const divisionFilter = req.query.division || null;
+        
+        if (!classFilter || !divisionFilter) {
+            return res.status(400).json({
+                success: false,
+                message: 'Class and division must be specified in query parameters'
+            });
+        }
 
+        // Convert to strings for comparison
+        const classFilterStr = classFilter.toString();
+        
         // Verify that the teacher is authorized to view this class
         const isClassTeacher = teacher.classTeacher && 
-                              teacher.classTeacher.class === classFilter && 
+                              teacher.classTeacher.class.toString() === classFilterStr && 
                               teacher.classTeacher.division === divisionFilter;
                               
         const isSubjectTeacher = teacher.subjects.some(subject => 
-            subject.class === classFilter && subject.division === divisionFilter
+            subject.class.toString() === classFilterStr && 
+            subject.division === divisionFilter
         );
 
         if (!isClassTeacher && !isSubjectTeacher) {
-            return res.status(403).send({ 
-                error: 'Access denied. You do not teach this class.' 
+            return res.status(403).json({ 
+                success: false,
+                message: 'Access denied. You do not teach this class.' 
             });
         }
 
@@ -557,10 +606,14 @@ const getClassStudents = async (req, res) => {
             division: divisionFilter
         }).populate('parentId', 'fullName');
 
-        res.status(200).send(students);
+        res.status(200).json(students);
     } catch (error) {
         console.error('Error getting class students:', error);
-        res.status(500).send({ error: 'Error getting class students.' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Error getting class students.',
+            error: error.message
+        });
     }
 };
 
@@ -1130,53 +1183,43 @@ const submitComplaint = async (req, res) => {
 
 const getParentContacts = async (req, res) => {
     try {
-        const teacherId = req.teacher._id;
+        const teacher = req.teacher;
         
-        // Get all subjects the teacher teaches
-        const teacher = await Teacher.findById(teacherId);
-        if (!teacher) {
-            return res.status(404).json({
-                success: false,
-                message: 'Teacher not found'
+        // Prepare class conditions based on teacher's assignments
+        const classConditions = [];
+        
+        // Add teacher's class if they're a class teacher
+        if (teacher.classTeacher && teacher.classTeacher.class && teacher.classTeacher.division) {
+            classConditions.push({
+                class: teacher.classTeacher.class,
+                division: teacher.classTeacher.division
             });
         }
         
-        // Extract unique class-division combinations from teacher's subjects
-        const uniqueClasses = [];
+        // Add classes where teacher teaches subjects
         teacher.subjects.forEach(subject => {
-            const exists = uniqueClasses.find(
-                item => item.class === subject.class && item.division === subject.division
-            );
-            
-            if (!exists) {
-                uniqueClasses.push({
-                    class: subject.class,
-                    division: subject.division
-                });
+            if (subject.class && subject.division) {
+                const exists = classConditions.some(
+                    cond => cond.class === subject.class && cond.division === subject.division
+                );
+                
+                if (!exists) {
+                    classConditions.push({
+                        class: subject.class,
+                        division: subject.division
+                    });
+                }
             }
         });
         
-        // If teacher is a class teacher, add that class too
-        if (teacher.classTeacher && teacher.classTeacher.class && teacher.classTeacher.division) {
-            const exists = uniqueClasses.find(
-                item => item.class === teacher.classTeacher.class && 
-                       item.division === teacher.classTeacher.division
-            );
-            
-            if (!exists) {
-                uniqueClasses.push({
-                    class: teacher.classTeacher.class,
-                    division: teacher.classTeacher.division
-                });
-            }
+        if (classConditions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No classes assigned to this teacher'
+            });
         }
         
-        // Find all students in these classes
-        const classConditions = uniqueClasses.map(c => ({
-            class: c.class,
-            division: c.division
-        }));
-        
+        // Get all students from classes taught by the teacher
         const students = await Student.find({
             $or: classConditions
         }).populate('parentId', 'fullName email');
@@ -1189,8 +1232,9 @@ const getParentContacts = async (req, res) => {
             role: `Parent of ${student.fullName}`,
             class: `${student.class}-${student.division}`,
             avatar: null,
-            lastActive: 'Unknown', // This would come from actual user sessions in a production app
-            unread: 0 // This would come from message status in a production app
+            unread: 0, // Will be populated by the unread-counts endpoint
+            lastMessage: null,
+            lastActive: 'Unknown'
         }));
         
         res.status(200).json({
@@ -1203,6 +1247,64 @@ const getParentContacts = async (req, res) => {
             success: false, 
             message: 'Error fetching contacts', 
             error: error.message 
+        });
+    }
+};
+
+const getUnreadMessagesCount = async (req, res) => {
+    try {
+        const teacherId = req.teacher._id;
+        
+        // Get total count of unread messages
+        const totalUnread = await Chat.countDocuments({
+            receiverId: teacherId,
+            receiverModel: 'Teacher',
+            read: false
+        });
+        
+        // Get unread counts per parent
+        const unreadData = await Chat.aggregate([
+            {
+                $match: {
+                    receiverId: teacherId,
+                    receiverModel: 'Teacher',
+                    read: false
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        parentId: "$senderId",
+                        studentId: "$studentId"
+                    },
+                    unreadCount: { $sum: 1 },
+                    lastMessage: { $last: "$message" },
+                    timestamp: { $last: "$createdAt" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    parentId: "$_id.parentId",
+                    studentId: "$_id.studentId",
+                    unreadCount: 1,
+                    lastMessage: 1,
+                    timestamp: 1
+                }
+            }
+        ]);
+        
+        res.status(200).json({
+            success: true,
+            totalUnread,
+            unreadData
+        });
+    } catch (error) {
+        console.error('Error getting unread message count:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting unread message count',
+            error: error.message
         });
     }
 };
@@ -1231,6 +1333,7 @@ export {
     assignAttendanceFromExcel,
     getTeacherProfile,
     submitComplaint,
-    getParentContacts
+    getParentContacts,
+    getUnreadMessagesCount
 };
 

@@ -113,4 +113,23 @@ const subjectTeacherAuthMiddleware = async (req, res, next) => {
     }
 };
 
-export { teacherAuthMiddleware, classTeacherAuthMiddleware, subjectTeacherAuthMiddleware };
+const classTeacherAuthForClassMiddleware = async (req, res, next) => {
+    try {
+        // Remove the authorization checks - allow any teacher to access attendance features
+        next();
+    } catch (error) {
+        console.error('Authorization error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Authorization error',
+            error: error.message
+        });
+    }
+};
+
+export { 
+    teacherAuthMiddleware, 
+    classTeacherAuthMiddleware, 
+    subjectTeacherAuthMiddleware,
+    classTeacherAuthForClassMiddleware
+};

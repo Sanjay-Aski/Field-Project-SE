@@ -30,6 +30,8 @@ import HelpCenter from './pages/support/HelpCenter';
 import ComplaintList from './pages/admin/complaints/ComplaintList';
 import TeacherChatPage from './pages/teacher/chat/TeacherChatPage';
 import ParentChatPage from './pages/parent/chat/ParentChatPage';
+import AttendanceEntryPage from './pages/teacher/attendance/AttendanceEntryPage';
+import StudentAttendance from './pages/parent/attendance/StudentAttendance';
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -107,7 +109,7 @@ function App() {
             <Route path="dashboard" element={<TeacherDashboard />} />
             <Route path="classroom/:classId/:division" element={<ClassroomView />} />
             <Route path="classes" element={<Navigate to="/teacher/dashboard" replace />} />
-            <Route path="attendance" element={<div className="p-4">Attendance Management Page</div>} />
+            <Route path="attendance" element={<AttendanceEntryPage />} />
             <Route path="marksheets" element={<div className="p-4">Marksheets Management Page</div>} />
             <Route path="forms" element={<div className="p-4">Forms Management Page</div>} />
             <Route path="chat" element={<TeacherChatPage />} />
@@ -128,6 +130,7 @@ function App() {
             <Route path="dashboard" element={<ParentDashboard />} />
             <Route path="profile" element={<ParentProfile />} />
             <Route path="children" element={<div className="p-4">My Children Page</div>} />
+            <Route path="attendance/:studentId" element={<StudentAttendance />} />
             <Route path="chat/:studentId?" element={<ParentChatPage />} />
             <Route path="forms/pending" element={<div className="p-4">Pending Forms Page</div>} />
             <Route path="teachers" element={<div className="p-4">Teachers Page</div>} />
