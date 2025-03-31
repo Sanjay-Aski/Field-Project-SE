@@ -4,7 +4,10 @@ import { Teacher, Student } from '../model.js';
 const teacherAuthMiddleware = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-        return res.status(401).send({ error: 'No token provided. Please authenticate.' });
+        return res.status(401).json({
+            success: false,
+            message: 'No token provided. Please authenticate.'
+        });
     }
 
     try {
@@ -12,7 +15,10 @@ const teacherAuthMiddleware = async (req, res, next) => {
         const teacher = await Teacher.findOne({ _id: decoded.id });
 
         if (!teacher) {
-            return res.status(401).send({ error: 'Invalid token. Please authenticate.' });
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token. Please authenticate.'
+            });
         }
 
         req.token = token;
@@ -20,7 +26,18 @@ const teacherAuthMiddleware = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Authentication error:', error);
-        res.status(401).send({ error: 'Please authenticate.' });
+        let message = 'Please authenticate.';
+        
+        if (error.name === 'JsonWebTokenError') {
+            message = 'Invalid token. Please login again.';
+        } else if (error.name === 'TokenExpiredError') {
+            message = 'Your session has expired. Please login again.';
+        }
+        
+        res.status(401).json({
+            success: false,
+            message
+        });
     }
 };
 
@@ -69,11 +86,13 @@ const subjectTeacherAuthMiddleware = async (req, res, next) => {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-     
+        // Improve the check for teachers - account for class teachers as well
         const teachesClass = teacher.subjects.some(subject => 
             subject.class === student.class && 
             subject.division === student.division
-        );
+        ) || (teacher.classTeacher && 
+               teacher.classTeacher.class === student.class && 
+               teacher.classTeacher.division === student.division);
 
         if (!teachesClass) {
             return res.status(403).send({ 

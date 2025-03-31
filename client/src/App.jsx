@@ -7,6 +7,8 @@ import LandingPage from './pages/LandingPage';
 import NotFound from './pages/NotFound';
 import AdminLayout from './components/layouts/AdminLayout';
 import TeacherLayout from './components/layouts/TeacherLayout';
+import ParentLayout from './components/layouts/ParentLayout';
+import SupportLayout from './components/layouts/SupportLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import TeacherList from './pages/admin/teachers/TeacherList';
 import TeacherForm from './pages/admin/teachers/TeacherForm';
@@ -17,9 +19,17 @@ import DonationList from './pages/admin/donations/DonationList';
 import TeacherDashboard from './pages/teacher/Dashboard';
 import ClassroomView from './pages/teacher/ClassroomView';
 import ParentDashboard from './pages/parent/Dashboard';
+import ParentProfile from './pages/parent/Profile';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import StudentFormSlim from './pages/admin/students/StudentFormSlim';
 import Navbar from './components/ui/Navbar';
+import ComplaintForm from './pages/support/ComplaintForm';
+import FAQ from './pages/support/FAQ';
+import FeedbackForm from './pages/support/FeedbackForm';
+import HelpCenter from './pages/support/HelpCenter';
+import ComplaintList from './pages/admin/complaints/ComplaintList';
+import TeacherChatPage from './pages/teacher/chat/TeacherChatPage';
+import ParentChatPage from './pages/parent/chat/ParentChatPage';
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -52,6 +62,14 @@ function App() {
           <Route path="/admin/register" element={<AdminRegister />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           
+          {/* Public Support Routes */}
+          <Route path="/support" element={<SupportLayout />}>
+            <Route index element={<HelpCenter />} />
+            <Route path="faq" element={<FAQ />} />
+            <Route path="complaint" element={<ComplaintForm />} />
+            <Route path="feedback" element={<FeedbackForm />} />
+          </Route>
+          
           {/* Protected Admin Routes */}
           <Route 
             path="/admin/*" 
@@ -72,6 +90,8 @@ function App() {
             <Route path="students/add" element={<StudentFormSlim />} />
             <Route path="students/edit/:id" element={<StudentFormSlim />} />
             <Route path="donations" element={<DonationList />} />
+            <Route path="complaints" element={<ComplaintList />} />
+            <Route path="support/complaint" element={<ComplaintForm />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
           
@@ -90,20 +110,30 @@ function App() {
             <Route path="attendance" element={<div className="p-4">Attendance Management Page</div>} />
             <Route path="marksheets" element={<div className="p-4">Marksheets Management Page</div>} />
             <Route path="forms" element={<div className="p-4">Forms Management Page</div>} />
-            <Route path="chat" element={<div className="p-4">Parent Chat Page</div>} />
+            <Route path="chat" element={<TeacherChatPage />} />
             <Route path="analytics" element={<div className="p-4">Analytics Page</div>} />
+            <Route path="support/complaint" element={<ComplaintForm />} />
             <Route index element={<Navigate to="/teacher/dashboard" replace />} />
           </Route>
           
           {/* Protected Parent Routes */}
           <Route 
-            path="/parent/dashboard/*" 
+            path="/parent/*" 
             element={
               <ProtectedRoute allowedRoles={['parent']}>
-                <ParentDashboard />
+                <ParentLayout />
               </ProtectedRoute>
-            } 
-          />
+            }
+          >
+            <Route path="dashboard" element={<ParentDashboard />} />
+            <Route path="profile" element={<ParentProfile />} />
+            <Route path="children" element={<div className="p-4">My Children Page</div>} />
+            <Route path="chat/:studentId?" element={<ParentChatPage />} />
+            <Route path="forms/pending" element={<div className="p-4">Pending Forms Page</div>} />
+            <Route path="teachers" element={<div className="p-4">Teachers Page</div>} />
+            <Route path="support/complaint" element={<ComplaintForm />} />
+            <Route index element={<Navigate to="/parent/dashboard" replace />} />
+          </Route>
           
           {/* Catch-all Route */}
           <Route path="*" element={<NotFound />} />

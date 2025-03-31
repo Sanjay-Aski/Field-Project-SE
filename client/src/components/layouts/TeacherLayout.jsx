@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   FaUserTie, FaBook, FaUsers, FaCalendarAlt, FaChalkboardTeacher, 
-  FaSignOutAlt, FaClipboardList, FaBars, FaTimes, FaChartBar 
+  FaSignOutAlt, FaClipboardList, FaBars, FaTimes, FaChartBar, FaExclamationCircle 
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import Footer from '../ui/Footer';
 
 const TeacherLayout = () => {
   const { logout, user } = useAuth();
@@ -31,7 +32,8 @@ const TeacherLayout = () => {
     { path: '/teacher/marksheets', icon: <FaBook />, label: 'Marksheets' },
     { path: '/teacher/forms', icon: <FaClipboardList />, label: 'Forms' },
     { path: '/teacher/chat', icon: <FaUsers />, label: 'Parent Chat' },
-    { path: '/teacher/analytics', icon: <FaChartBar />, label: 'Analytics' }
+    { path: '/teacher/analytics', icon: <FaChartBar />, label: 'Analytics' },
+    // { path: '/teacher/support/complaint', icon: <FaExclamationCircle />, label: 'Raise Complaint' }
   ];
   
   return (
@@ -108,13 +110,14 @@ const TeacherLayout = () => {
               </li>
             ))}
             <li>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center py-3 px-6 text-red-500 hover:bg-gray-100 transition-colors"
-              >
-                <span className="mr-3"><FaSignOutAlt /></span>
-                Logout
-              </button>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center py-3 px-6 text-yellow-900 bg-orange-400  hover:bg-yellow-700 transition-colors"
+            >
+              <span className="mr-3"><FaSignOutAlt /></span>
+              Logout
+            </button>
+
             </li>
           </ul>
         </nav>
@@ -124,6 +127,9 @@ const TeacherLayout = () => {
       <div className="flex-grow p-6 md:p-8 overflow-auto">
         <Outlet />
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

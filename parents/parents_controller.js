@@ -1,24 +1,20 @@
-import { Parent, Student, MarkSheet, Attendance, Note, DynamicForm, Teacher ,Chat,Donation} from '../model.js';
+import { Parent, Student, MarkSheet, Attendance, Note, DynamicForm, Teacher, Chat, Donation, Complaint } from '../model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
 
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-     
         const parent = await Parent.findOne({ email });
         if (!parent) {
             return res.status(404).json({ error: 'Parent not found' });
         }
 
-
         const isMatch = await bcrypt.compare(password, parent.password);
         if (!isMatch) {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
-
 
         const token = jwt.sign(
             { id: parent._id },
@@ -34,7 +30,6 @@ const login = async (req, res) => {
     }
 };
 
-
 const getChildren = async (req, res) => {
     try {
         const parent = req.parent;
@@ -49,10 +44,14 @@ const getChildren = async (req, res) => {
 
 const getForms = async (req, res) => {
     try {
-        const studentId = req.params.studentId;
+        const { studentId } = req.params;
         const parentId = req.parent._id;
 
-        // Find the student
+        // Handle special case for "not-filled" which isn't a valid ObjectId
+        if (studentId === 'not-filled') {
+            return getAllFormsNotFilled(req, res);
+        }
+
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).json({
@@ -61,7 +60,6 @@ const getForms = async (req, res) => {
             });
         }
 
-        // Validate parent's access
         const parent = await Parent.findById(parentId);
         if (!parent.children.includes(studentId)) {
             return res.status(403).json({
@@ -70,7 +68,6 @@ const getForms = async (req, res) => {
             });
         }
 
-        // Find forms with specific fields
         const forms = await DynamicForm.find({
             $or: [
                 {
@@ -94,7 +91,6 @@ const getForms = async (req, res) => {
             });
         }
 
-        // Format the response and check response status
         const formattedForms = forms.map(form => ({
             _id: form._id,
             title: form.title,
@@ -107,7 +103,6 @@ const getForms = async (req, res) => {
             ) || false
         }));
 
-        // Send single response
         return res.status(200).json({
             success: true,
             forms: formattedForms
@@ -192,18 +187,15 @@ const acknowledgeNote = async (req, res) => {
             return res.status(404).send({ error: 'Note not found.' });
         }
 
-        // Find student associated with this note (if it's from teacher to student)
         const student = await Student.findById(note.receiverId);
         if (!student) {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-        // Check if the student belongs to this parent
         if (!parent.children.includes(student._id)) {
             return res.status(403).send({ error: 'You can only acknowledge notes for your children.' });
         }
 
-        // Check if note is from a teacher
         const teacher = await Teacher.findById(note.senderId);
         if (!teacher) {
             return res.status(404).send({ error: 'Teacher not found.' });
@@ -220,6 +212,7 @@ const acknowledgeNote = async (req, res) => {
         res.status(500).send({ error: 'Error acknowledging note.' });
     }
 };
+
 const getTeacherDetails = async (req, res) => {
     try {
         const { studentId } = req.params;
@@ -238,9 +231,10 @@ const getTeacherDetails = async (req, res) => {
         });
 
         const teacherDetails = teachers.map(teacher => ({
+            _id: teacher._id, // Include the teacher ID
             fullName: teacher.fullName,
             subjects: teacher.subjects.filter(subject => subject.class === student.class && subject.division === student.division).map(subject => subject.subject),
-            isClassTeacher: teacher.classTeacher.class === student.class && teacher.classTeacher.division === student.division ? 'Class Teacher' : ''
+            isClassTeacher: teacher.classTeacher && teacher.classTeacher.class === student.class && teacher.classTeacher.division === student.division
         }));
 
         res.status(200).send(teacherDetails);
@@ -249,28 +243,25 @@ const getTeacherDetails = async (req, res) => {
         res.status(500).send({ error: 'Error getting teacher details.' });
     }
 };
+
 const fillForm = async (req, res) => {
     try {
         const { formId, studentId, answers } = req.body;
         const parent = req.parent;
 
-        // Check if form exists
         const form = await DynamicForm.findById(formId);
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
         }
 
-        // Check if student belongs to parent
         if (!parent.children.includes(studentId)) {
             return res.status(403).json({ error: 'Access denied. This student is not your child.' });
         }
 
-        // Check if student is assigned to this form
         if (!form.studentIds.includes(studentId)) {
             return res.status(403).json({ error: 'This form is not assigned to your child.' });
         }
 
-        // Validate answers against form fields
         const isValidAnswers = form.fields.every(field => {
             const answer = answers.find(a => a.field === field.label);
             if (!answer) return false;
@@ -285,7 +276,6 @@ const fillForm = async (req, res) => {
             return res.status(400).json({ error: 'Invalid answers provided.' });
         }
 
-        // Add response to form
         form.responses.push({
             parentId: parent._id,
             studentId: studentId,
@@ -296,7 +286,6 @@ const fillForm = async (req, res) => {
 
         res.status(201).json({
             message: 'Form filled successfully'
-          
         });
 
     } catch (error) {
@@ -310,12 +299,10 @@ const sendMessageToTeacher = async (req, res) => {
         const { teacherId, studentId, message } = req.body;
         const parent = req.parent;
 
-        // Verify if student belongs to parent
         if (!parent.children.includes(studentId)) {
             return res.status(403).send({ error: 'You can only send messages about your children' });
         }
 
-        // Verify if teacher teaches the student
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).send({ error: 'Student not found.' });
@@ -326,11 +313,13 @@ const sendMessageToTeacher = async (req, res) => {
             return res.status(404).send({ error: 'Teacher not found.' });
         }
 
-        // Check if teacher teaches this student's class
+        // Fix the authorization check to properly verify the teacher's relationship to the student
         const teachesClass = teacher.subjects.some(subject => 
             subject.class === student.class && 
             subject.division === student.division
-        );
+        ) || (teacher.classTeacher && 
+               teacher.classTeacher.class === student.class && 
+               teacher.classTeacher.division === student.division);
 
         if (!teachesClass) {
             return res.status(403).send({ error: 'You can only chat with teachers who teach your child' });
@@ -359,23 +348,19 @@ const getChatHistory = async (req, res) => {
         const { teacherId, studentId } = req.body;
         const parent = req.parent;
 
-        // Validate input
         if (!teacherId || !studentId) {
             return res.status(400).send({ error: 'Teacher ID and Student ID are required' });
         }
 
-        // Verify if student belongs to parent
         if (!parent.children.includes(studentId)) {
             return res.status(403).send({ error: 'You can only view chats about your children' });
         }
 
-        // Verify if student exists
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-        // Get chat messages
         const messages = await Chat.find({
             studentId: studentId,
             $or: [
@@ -387,7 +372,6 @@ const getChatHistory = async (req, res) => {
         .populate('senderId', 'fullName')
         .populate('receiverId', 'fullName');
 
-        // Format messages
         const formattedMessages = messages.map(msg => ({
             _id: msg._id,
             message: msg.message,
@@ -421,7 +405,6 @@ const getAllFormsNotFilled = async (req, res) => {
             });
         }
 
-        // Get all forms assigned to the parent's children
         const forms = await DynamicForm.find({
             $or: [
                 {
@@ -440,7 +423,6 @@ const getAllFormsNotFilled = async (req, res) => {
                     }
                 }
             ],
-            // Check if form hasn't been filled by this parent
             'responses.parentId': { 
                 $ne: parentId 
             }
@@ -480,6 +462,7 @@ const getNotes = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error fetching notes', error: error.message });
     }
 };
+
 const createDonation = async (req, res) => {
     try {
         const donorId = req.parent._id;
@@ -489,7 +472,6 @@ const createDonation = async (req, res) => {
             return res.status(400).json({ message: "Invalid donation format" });
         }
 
-        // Create separate donation entries for each item
         const donations = items.map(({ item, quantity, description }) => ({
             donorId,
             item,
@@ -545,7 +527,6 @@ const applyForDonation = async (req, res) => {
             return res.status(400).json({ error: 'This donation is not available' });
         }
 
-        // Check if parent already requested this donation
         const alreadyRequested = donation.interestedUsers.some(
             user => user.userId.toString() === parent._id.toString()
         );
@@ -554,7 +535,6 @@ const applyForDonation = async (req, res) => {
             return res.status(400).json({ error: 'You have already requested this donation' });
         }
 
-        // Add parent to interested users
         donation.interestedUsers.push({
             userId: parent._id,
             requestDate: new Date(),
@@ -565,14 +545,101 @@ const applyForDonation = async (req, res) => {
 
         res.status(200).json({
             message: 'Request submitted successfully',
-
         });
     } catch (error) {
         console.error('Error applying for donation:', error);
         res.status(500).json({ error: 'Error applying for donation' });
     }
 };
-export { login,getChildren,fillForm, getForms, getMarksheet, getAttendanceReport, sendNoteToTeacher, acknowledgeNote, getTeacherDetails,sendMessageToTeacher, getChatHistory ,    createDonation,
+
+const getParentProfile = async (req, res) => {
+    try {
+        const parentId = req.parent._id;
+        
+        const parent = await Parent.findById(parentId)
+            .select('-password')
+            .populate('children')
+            .lean();
+        
+        if (!parent) {
+            return res.status(404).json({
+                success: false,
+                message: 'Parent profile not found'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            parent
+        });
+    } catch (error) {
+        console.error('Error fetching parent profile:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching parent profile', 
+            error: error.message 
+        });
+    }
+};
+
+const submitComplaint = async (req, res) => {
+    try {
+        const { subject, description, priority, category } = req.body;
+        const parentId = req.parent._id;
+        
+        // Validate required fields
+        if (!subject || !description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subject and description are required'
+            });
+        }
+        
+        // Create and save the complaint
+        const complaint = new Complaint({
+            userId: parentId,
+            userRole: 'Parent',
+            subject,
+            description,
+            priority: priority || 'medium',
+            category: category || 'other',
+            status: 'pending'
+        });
+        
+        await complaint.save();
+        
+        res.status(201).json({
+            success: true,
+            message: 'Complaint submitted successfully',
+            complaintId: complaint._id
+        });
+    } catch (error) {
+        console.error('Error submitting complaint:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error submitting complaint', 
+            error: error.message 
+        });
+    }
+};
+
+export { 
+    login,
+    getChildren,
+    fillForm, 
+    getForms, 
+    getMarksheet, 
+    getAttendanceReport, 
+    sendNoteToTeacher, 
+    acknowledgeNote, 
+    getTeacherDetails,
+    sendMessageToTeacher, 
+    getChatHistory,
+    createDonation,
     getPendingDonations,
-    applyForDonation,getAllFormsNotFilled,
-    getNotes};
+    applyForDonation,
+    getAllFormsNotFilled,
+    getNotes,
+    getParentProfile,
+    submitComplaint
+};

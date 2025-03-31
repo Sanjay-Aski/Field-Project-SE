@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   FaUserShield, FaChalkboardTeacher, FaUsers, FaUser, 
-  FaUserGraduate, FaSignOutAlt, FaGift, FaBars, FaTimes 
+  FaUserGraduate, FaSignOutAlt, FaGift, FaBars, FaTimes,
+  FaTicketAlt
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import Footer from '../ui/Footer';
 
 const AdminLayout = () => {
   const { logout } = useAuth();
@@ -30,6 +32,7 @@ const AdminLayout = () => {
     { path: '/admin/parents', icon: <FaUsers />, label: 'Parents' },
     { path: '/admin/students', icon: <FaUserGraduate />, label: 'Students' },
     { path: '/admin/donations', icon: <FaGift />, label: 'Donations' },
+    { path: '/admin/complaints', icon: <FaTicketAlt />, label: 'Support Tickets' },
   ];
   
   return (
@@ -87,9 +90,11 @@ const AdminLayout = () => {
         </nav>
       </div>
       
-      {/* Main Content */}
-      <div className="flex-grow p-6 md:p-8 overflow-auto">
-        <Outlet />
+      {/* Main Content with Footer */}
+      <div className="flex-grow flex flex-col">
+        <div className="flex-grow p-6 md:p-8 overflow-auto">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

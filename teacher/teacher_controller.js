@@ -1,4 +1,4 @@
-import { Student, MarkSheet, Attendance, Note, DynamicForm, Teacher,Chat,SchoolWorkingDay } from '../model.js';
+import { Parent, Student, MarkSheet, Attendance, Note, DynamicForm, Teacher, Chat, SchoolWorkingDay, Complaint } from '../model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -56,7 +56,6 @@ const assignMarksheet = async (req, res) => {
         const { studentId, marks } = req.body;
         const teacher = req.teacher;
 
-        
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).send({ error: 'Student not found.' });
@@ -128,7 +127,6 @@ const setWorkingDays = async (req, res) => {
                 }]
             });
         } else {
-            // Check if a month record already exists
             let monthRecord = schoolDoc.attendance.find(item => item.month === month);
             if (!monthRecord) {
                 schoolDoc.attendance.push({ month, workingDays: workingDaysDates });
@@ -231,7 +229,6 @@ const getAttendance = async (req, res) => {
     }
 };
 
-
 const getMarksheet = async (req, res) => {
     try {
         const { studentId } = req.params;
@@ -253,7 +250,6 @@ const getMarksheet = async (req, res) => {
         res.status(500).send({ error: 'Error getting marksheet.' });
     }
 };
-
 
 const giveNote = async (req, res) => {
     try {
@@ -372,6 +368,7 @@ const giveForm = async (req, res) => {
         res.status(500).send({ error: 'Error giving form.' });
     }
 };
+
 const getSentForms = async (req, res) => {
     try {
         const teacherId = req.teacher._id;
@@ -415,6 +412,7 @@ const getSentForms = async (req, res) => {
         });
     }
 };
+
 const getFormAnalytics = async (req, res) => {
     try {
         const { formId } = req.params;
@@ -512,6 +510,7 @@ const getFormAnalytics = async (req, res) => {
         });
     }
 };
+
 const getFormResponses = async (req, res) => {
     try {
         const { formId } = req.params;
@@ -528,14 +527,35 @@ const getFormResponses = async (req, res) => {
         res.status(500).send({ error: 'Error getting form responses.' });
     }
 };
+
 const getClassStudents = async (req, res) => {
     try {
         const teacher = req.teacher;
+        // Get class and division from query parameters if provided
+        // Otherwise, fall back to the teacher's class teacher assignment
+        const classFilter = req.query.class ? parseInt(req.query.class) : teacher.classTeacher.class;
+        const divisionFilter = req.query.division || teacher.classTeacher.division;
 
+        // Verify that the teacher is authorized to view this class
+        const isClassTeacher = teacher.classTeacher && 
+                              teacher.classTeacher.class === classFilter && 
+                              teacher.classTeacher.division === divisionFilter;
+                              
+        const isSubjectTeacher = teacher.subjects.some(subject => 
+            subject.class === classFilter && subject.division === divisionFilter
+        );
+
+        if (!isClassTeacher && !isSubjectTeacher) {
+            return res.status(403).send({ 
+                error: 'Access denied. You do not teach this class.' 
+            });
+        }
+
+        // Fetch students from the specified class
         const students = await Student.find({
-            class: teacher.classTeacher.class,
-            division: teacher.classTeacher.division
-        });
+            class: classFilter,
+            division: divisionFilter
+        }).populate('parentId', 'fullName');
 
         res.status(200).send(students);
     } catch (error) {
@@ -543,10 +563,18 @@ const getClassStudents = async (req, res) => {
         res.status(500).send({ error: 'Error getting class students.' });
     }
 };
+
 const sendMessageToParent = async (req, res) => {
     try {
-        const { studentId, message } = req.body;
-        const teacher = req.teacher;
+        const { parentId, studentId, message } = req.body;
+        const teacherId = req.teacher._id;
+
+        if (!parentId || !studentId || !message) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Parent ID, Student ID and message are required' 
+            });
+        }
 
         // Verify if teacher teaches the student
         const student = await Student.findById(studentId).populate('parentId');
@@ -554,20 +582,13 @@ const sendMessageToParent = async (req, res) => {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-        // Check if teacher teaches this student's class
-        const teachesClass = teacher.subjects.some(subject => 
-            subject.class === student.class && 
-            subject.division === student.division
-        );
-
-        if (!teachesClass) {
-            return res.status(403).send({ error: 'You can only chat with parents of students you teach' });
+        if (student.parentId._id.toString() !== parentId) {
+            return res.status(403).send({ error: 'Parent does not match student' });
         }
 
-        const parentId = student.parentId._id;
-
+        // Create and save the chat message
         const chat = new Chat({
-            senderId: teacher._id,
+            senderId: teacherId,
             receiverId: parentId,
             senderModel: 'Teacher',
             receiverModel: 'Parent',
@@ -577,19 +598,36 @@ const sendMessageToParent = async (req, res) => {
 
         await chat.save();
 
-        res.status(201).json({ message: 'Message sent successfully' });
+        res.status(201).json({ 
+            success: true,
+            message: 'Message sent successfully',
+            chatMessage: {
+                id: chat._id,
+                text: chat.message,
+                timestamp: chat.createdAt,
+                senderId: 'me'
+            }
+        });
     } catch (error) {
         console.error('Error sending message:', error);
-        res.status(500).send({ error: 'Error sending message.' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error sending message.', 
+            error: error.message 
+        });
     }
 };
 
 const getChatHistory = async (req, res) => {
     try {
-        const { studentId } = req.body;
-        const teacher = req.teacher;
+        const { parentId, studentId } = req.body;
+        const teacherId = req.teacher._id;
 
         // Validate input
+        if (!parentId) {
+            return res.status(400).send({ error: 'Parent ID is required' });
+        }
+        
         if (!studentId) {
             return res.status(400).send({ error: 'Student ID is required' });
         }
@@ -600,14 +638,16 @@ const getChatHistory = async (req, res) => {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-        const parentId = student.parentId._id;
+        if (student.parentId._id.toString() !== parentId) {
+            return res.status(403).send({ error: 'Parent does not match student' });
+        }
 
         // Get chat messages
         const messages = await Chat.find({
             studentId: studentId,
             $or: [
-                { senderId: teacher._id, receiverId: parentId },
-                { senderId: parentId, receiverId: teacher._id }
+                { senderId: teacherId, receiverId: parentId },
+                { senderId: parentId, receiverId: teacherId }
             ]
         })
         .sort({ createdAt: 1 })
@@ -616,13 +656,11 @@ const getChatHistory = async (req, res) => {
 
         // Format messages
         const formattedMessages = messages.map(msg => ({
-            _id: msg._id,
-            message: msg.message,
-            senderName: msg.senderId.fullName,
-            receiverName: msg.receiverId.fullName,
-            senderModel: msg.senderModel,
+            id: msg._id,
+            text: msg.message,
+            senderId: msg.senderId._id.toString() === teacherId.toString() ? 'me' : msg.senderId._id,
             timestamp: msg.createdAt,
-            isSender: msg.senderId.toString() === teacher._id.toString()
+            senderName: msg.senderId.fullName,
         }));
 
         res.status(200).json({
@@ -975,12 +1013,20 @@ const getTeacherProfile = async (req, res) => {
     try {
         const teacherId = req.teacher._id;
         
-        // Find teacher and exclude password
-        const teacher = await Teacher.findById(teacherId).select('-password');
+        // Find teacher and populate relevant data
+        const teacher = await Teacher.findById(teacherId)
+            .select('-password')
+            .lean();
         
         if (!teacher) {
-            return res.status(404).send({ error: 'Teacher not found.' });
+            return res.status(404).json({
+                success: false,
+                message: 'Teacher not found.'
+            });
         }
+        
+        // Add additional data if needed
+        // For example, fetch class info, student counts, etc.
         
         res.status(200).json({
             success: true,
@@ -991,6 +1037,126 @@ const getTeacherProfile = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error fetching teacher profile', 
+            error: error.message 
+        });
+    }
+};
+
+const submitComplaint = async (req, res) => {
+    try {
+        const { subject, description, priority, category } = req.body;
+        const teacherId = req.teacher._id;
+        
+        // Validate required fields
+        if (!subject || !description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subject and description are required'
+            });
+        }
+        
+        // Create and save the complaint
+        const complaint = new Complaint({
+            userId: teacherId,
+            userRole: 'Teacher',
+            subject,
+            description,
+            priority: priority || 'medium',
+            category: category || 'other',
+            status: 'pending'
+        });
+        
+        await complaint.save();
+        
+        res.status(201).json({
+            success: true,
+            message: 'Complaint submitted successfully',
+            complaintId: complaint._id
+        });
+    } catch (error) {
+        console.error('Error submitting complaint:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error submitting complaint', 
+            error: error.message 
+        });
+    }
+};
+
+const getParentContacts = async (req, res) => {
+    try {
+        const teacherId = req.teacher._id;
+        
+        // Get all subjects the teacher teaches
+        const teacher = await Teacher.findById(teacherId);
+        if (!teacher) {
+            return res.status(404).json({
+                success: false,
+                message: 'Teacher not found'
+            });
+        }
+        
+        // Extract unique class-division combinations from teacher's subjects
+        const uniqueClasses = [];
+        teacher.subjects.forEach(subject => {
+            const exists = uniqueClasses.find(
+                item => item.class === subject.class && item.division === subject.division
+            );
+            
+            if (!exists) {
+                uniqueClasses.push({
+                    class: subject.class,
+                    division: subject.division
+                });
+            }
+        });
+        
+        // If teacher is a class teacher, add that class too
+        if (teacher.classTeacher && teacher.classTeacher.class && teacher.classTeacher.division) {
+            const exists = uniqueClasses.find(
+                item => item.class === teacher.classTeacher.class && 
+                       item.division === teacher.classTeacher.division
+            );
+            
+            if (!exists) {
+                uniqueClasses.push({
+                    class: teacher.classTeacher.class,
+                    division: teacher.classTeacher.division
+                });
+            }
+        }
+        
+        // Find all students in these classes
+        const classConditions = uniqueClasses.map(c => ({
+            class: c.class,
+            division: c.division
+        }));
+        
+        const students = await Student.find({
+            $or: classConditions
+        }).populate('parentId', 'fullName email');
+        
+        // Format the response
+        const contacts = students.map(student => ({
+            id: student.parentId._id,
+            studentId: student._id,
+            name: student.parentId.fullName,
+            role: `Parent of ${student.fullName}`,
+            class: `${student.class}-${student.division}`,
+            avatar: null,
+            lastActive: 'Unknown', // This would come from actual user sessions in a production app
+            unread: 0 // This would come from message status in a production app
+        }));
+        
+        res.status(200).json({
+            success: true,
+            contacts
+        });
+    } catch (error) {
+        console.error('Error fetching parent contacts:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching contacts', 
             error: error.message 
         });
     }
@@ -1017,6 +1183,8 @@ export {
     setWorkingDaysFromExcel,
     assignMarksheetFromExcel,
     assignAttendanceFromExcel,
-    getTeacherProfile
+    getTeacherProfile,
+    submitComplaint,
+    getParentContacts
 };
 

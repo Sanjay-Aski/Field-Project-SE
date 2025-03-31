@@ -22,7 +22,11 @@ import {
     getParentById,
     getAllParents,
     getStudentById,
-    getAllStudents
+    getAllStudents,
+    getAllComplaints,
+    getComplaintById,
+    respondToComplaint,
+    updateComplaintStatus
 } from '../admin/admin_controller.js';
 
 import authMiddleware from './admin_middleware.js';
@@ -58,5 +62,11 @@ router.get('/parent', authMiddleware, getAllParents);
 // Add these routes for student management
 router.get('/student/:id', authMiddleware, getStudentById);
 router.get('/student', authMiddleware, getAllStudents);
+
+// Add these routes for complaint management
+router.get('/complaints', authMiddleware, getAllComplaints);
+router.get('/complaints/:complaintId', authMiddleware, getComplaintById);
+router.post('/complaints/:complaintId/respond', authMiddleware, respondToComplaint);
+router.post('/complaints/:complaintId/update-status', authMiddleware, updateComplaintStatus);
 
 export default router;

@@ -19,60 +19,55 @@ const ChatPage = () => {
     { id: 3, name: 'Sports Day Planning', unread: 5 }
   ]);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  
   const messagesEndRef = useRef(null);
   
-  // Fetch student details and available teachers
+  // Fetch student data and teachers when component mounts
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (!studentId) return;
-      
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        // Get student data
-        const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        // If studentId is provided, fetch student information
+        if (studentId) {
+          // Fetch student data
+          const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!studentResponse.ok) {
+            throw new Error(`Failed to fetch student data: ${studentResponse.status}`);
           }
-        });
-        
-        if (!studentResponse.ok) {
-          throw new Error(`Failed to fetch student data: ${studentResponse.status}`);
-        }
-        
-        const studentsData = await studentResponse.json();
-        const currentStudent = studentsData.find(s => s._id === studentId);
-        
-        if (!currentStudent) {
-          throw new Error('Student not found');
-        }
-        
-        setStudent(currentStudent);
-        
-        // Get teachers for this student
-        const teachersResponse = await fetch(`http://localhost:5000/parent/teacher-details/${studentId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+          
+          const studentsData = await studentResponse.json();
+          const currentStudent = studentsData.find(s => s._id === studentId);
+          
+          if (!currentStudent) {
+            throw new Error('Student not found');
           }
-        });
-        
-        if (!teachersResponse.ok) {
-          throw new Error(`Failed to fetch teachers: ${teachersResponse.status}`);
+          
+          setStudent(currentStudent);
+          
+          // Fetch teachers for this student
+          const teachersResponse = await fetch(`http://localhost:5000/parent/teacher-details/${studentId}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!teachersResponse.ok) {
+            throw new Error(`Failed to fetch teachers: ${teachersResponse.status}`);
+          }
+          
+          const teachersData = await teachersResponse.json();
+          setTeachers(teachersData);
         }
-        
-        const teachersData = await teachersResponse.json();
-        setTeachers(teachersData);
-        
-        // Set first teacher as default selected
-        if (teachersData.length > 0) {
-          setSelectedTeacher(teachersData[0]);
-          fetchChatHistory(teachersData[0]._id);
-        }
-        
       } catch (error) {
         console.error('Error fetching chat data:', error);
         setError(error.message);
@@ -147,30 +142,31 @@ const ChatPage = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to send message: ${response.status}`);
       }
       
-      // Add the message to the UI immediately
-      const tempMessage = {
-        _id: Date.now().toString(),
-        message: newMessage,
-        timestamp: new Date(),
-        isSender: true
-      };
-      
-      if (view === 'individual') {
-        setMessages([...messages, tempMessage]);
-        fetchChatHistory(selectedTeacher._id); // Refresh to get server-generated ID
-      } else {
-        // Simulate adding to group chat - in a real app, you might use WebSockets
-        setMessages([...messages, tempMessage]);
+      // After successful API call, refresh the chat or update the UI
+      if (view === 'individual' && selectedTeacher) {
+        // Add optimistic update for better UX
+        const tempMessage = {
+          _id: Date.now().toString(),
+          message: newMessage,
+          timestamp: new Date(),
+          isSender: true
+        };
+        
+        setMessages(prev => [...prev, tempMessage]);
+        
+        // Then refresh the chat history
+        fetchChatHistory(selectedTeacher._id);
       }
       
       setNewMessage('');
       
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(error.message || 'Failed to send message');
     }
   };
   
@@ -201,7 +197,7 @@ const ChatPage = () => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -278,15 +274,17 @@ const ChatPage = () => {
                           selectedTeacher && selectedTeacher._id === teacher._id ? 'bg-primary-50' : ''
                         }`}
                       >
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                            <FaUserCircle className="text-primary-600 text-xl" />
-                          </div>
-                          <div className="ml-3">
-                            <p className="font-medium text-gray-800">{teacher.fullName}</p>
-                            <p className="text-xs text-gray-500">
-                              {teacher.isClassTeacher ? 'Class Teacher' : teacher.subjects?.join(', ')}
-                            </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                              <FaUserCircle className="text-primary-600 text-xl" />
+                            </div>
+                            <div className="ml-3">
+                              <p className="font-medium text-gray-800">{teacher.fullName}</p>
+                              <p className="text-xs text-gray-500">
+                                {teacher.subjects?.join(', ') || 'No subjects'} {teacher.isClassTeacher && <span className="text-primary-600">(Class Teacher)</span>}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>

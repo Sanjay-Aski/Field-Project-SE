@@ -1,17 +1,14 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { Admin,Parent,Teacher,Student,Donation} from '../model.js';
-
+import { Admin, Parent, Teacher, Student, Donation, Complaint } from '../model.js';
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-
 const registerAdmin = async (req, res) => {
     try {
         const { email, password, adminKey } = req.body;
-
 
         if (adminKey !== process.env.ADMIN_KEY) {
             return res.status(403).json({ error: 'Invalid admin key' });
@@ -48,9 +45,6 @@ const loginAdmin = async (req, res) => {
     }
 };
 
-
-
-
 const addTeacher = async (req, res) => {
     try {
         const { password, ...rest } = req.body;
@@ -63,7 +57,6 @@ const addTeacher = async (req, res) => {
         res.status(400).json({ error: 'Error adding teacher' });
     }
 };
-
 
 const removeTeacher = async (req, res) => {
     try {
@@ -99,7 +92,6 @@ const removeParent = async (req, res) => {
         res.status(500).json({ error: 'Error removing parent' });
     }
 };
-
 
 const addStudent = async (req, res) => {
     try {
@@ -140,7 +132,6 @@ const addStudent = async (req, res) => {
     }
 };
 
-
 const removeStudent = async (req, res) => {
     try {
         const student = await Student.findByIdAndDelete(req.params.id);
@@ -151,7 +142,6 @@ const removeStudent = async (req, res) => {
         res.status(500).json({ error: 'Error removing Student' });
     }
 };
-
 
 const getAllDonations = async (req, res) => {
     try {
@@ -300,6 +290,7 @@ const updateTeacher = async (req, res) => {
         res.status(500).json({ error: 'Error updating teacher' });
     }
 };
+
 const updateParent = async (req, res) => {
     try {
         const { id } = req.params;
@@ -403,7 +394,6 @@ const searchStudents = async (req, res) => {
     }
 };
 
-// Add this function to get a single teacher by ID
 const getTeacherById = async (req, res) => {
     try {
         const teacher = await Teacher.findById(req.params.id);
@@ -417,7 +407,6 @@ const getTeacherById = async (req, res) => {
     }
 };
 
-// Add this function to get all teachers 
 const getAllTeachers = async (req, res) => {
     try {
         const teachers = await Teacher.find({});
@@ -428,7 +417,6 @@ const getAllTeachers = async (req, res) => {
     }
 };
 
-// Add these functions for parent management
 const getParentById = async (req, res) => {
     try {
         const parent = await Parent.findById(req.params.id).populate('children');
@@ -452,7 +440,6 @@ const getAllParents = async (req, res) => {
     }
 };
 
-// Add these functions for student management
 const getStudentById = async (req, res) => {
     try {
         const student = await Student.findById(req.params.id);
@@ -473,6 +460,152 @@ const getAllStudents = async (req, res) => {
     } catch (error) {
         console.error('Error fetching all students:', error);
         res.status(500).json({ error: 'Error fetching students' });
+    }
+};
+
+const getAllComplaints = async (req, res) => {
+    try {
+        const complaints = await Complaint.find({})
+            .populate('userId', 'fullName email')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            complaints: complaints.map(complaint => ({
+                _id: complaint._id,
+                subject: complaint.subject,
+                description: complaint.description,
+                priority: complaint.priority,
+                category: complaint.category,
+                status: complaint.status,
+                userRole: complaint.userRole,
+                userName: complaint.userId ? complaint.userId.fullName : 'Unknown',
+                userEmail: complaint.userId ? complaint.userId.email : 'Unknown',
+                createdAt: complaint.createdAt,
+                adminResponse: complaint.adminResponse
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching complaints:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching complaints',
+            error: error.message
+        });
+    }
+};
+
+const respondToComplaint = async (req, res) => {
+    try {
+        const { complaintId } = req.params;
+        const { responseText, status } = req.body;
+        const adminId = req.admin._id;
+
+        if (!responseText) {
+            return res.status(400).json({
+                success: false,
+                message: 'Response text is required'
+            });
+        }
+
+        const complaint = await Complaint.findById(complaintId);
+        if (!complaint) {
+            return res.status(404).json({
+                success: false,
+                message: 'Complaint not found'
+            });
+        }
+
+        complaint.status = status || 'resolved';
+        complaint.adminResponse = {
+            text: responseText,
+            respondedAt: new Date(),
+            adminId
+        };
+        complaint.updatedAt = new Date();
+
+        await complaint.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Response submitted successfully'
+        });
+    } catch (error) {
+        console.error('Error responding to complaint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error responding to complaint',
+            error: error.message
+        });
+    }
+};
+
+const getComplaintById = async (req, res) => {
+    try {
+        const { complaintId } = req.params;
+        
+        const complaint = await Complaint.findById(complaintId)
+            .populate('userId', 'fullName email')
+            .populate('adminResponse.adminId', 'email');
+            
+        if (!complaint) {
+            return res.status(404).json({
+                success: false,
+                message: 'Complaint not found'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            complaint
+        });
+    } catch (error) {
+        console.error('Error fetching complaint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching complaint',
+            error: error.message
+        });
+    }
+};
+
+const updateComplaintStatus = async (req, res) => {
+    try {
+        const { complaintId } = req.params;
+        const { status } = req.body;
+        const adminId = req.admin._id;
+
+        if (!status) {
+            return res.status(400).json({
+                success: false,
+                message: 'Status is required'
+            });
+        }
+
+        const complaint = await Complaint.findById(complaintId);
+        if (!complaint) {
+            return res.status(404).json({
+                success: false,
+                message: 'Complaint not found'
+            });
+        }
+
+        complaint.status = status;
+        complaint.updatedAt = new Date();
+
+        await complaint.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Status updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating complaint status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating complaint status',
+            error: error.message
+        });
     }
 };
 
@@ -499,5 +632,9 @@ export {
     getParentById,
     getAllParents,
     getStudentById,
-    getAllStudents
+    getAllStudents,
+    getAllComplaints,
+    getComplaintById,
+    respondToComplaint,
+    updateComplaintStatus
 };

@@ -16,7 +16,8 @@ const ClassroomView = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch('http://localhost:5000/teacher/class-students', {
+        // Update the API call to include class and division as query parameters
+        const response = await fetch(`http://localhost:5000/teacher/class-students?class=${classId}&division=${division}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -213,7 +214,7 @@ const ClassroomView = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-secondary-800">
-          Class {classId}-{division}
+          Class {classId}-{division} View
         </h1>
         
         <Link

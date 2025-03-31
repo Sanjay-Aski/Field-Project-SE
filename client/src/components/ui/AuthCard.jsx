@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaGraduationCap, FaSchool } from 'react-icons/fa';
+import logo from "../../utils/images/SchoolLogo.png"
 
 const AuthCard = ({ title, subtitle, children, footer }) => {
   return (
@@ -24,9 +25,9 @@ const AuthCard = ({ title, subtitle, children, footer }) => {
             <div className="w-36 h-36 bg-primary-100 rounded-lg overflow-hidden shadow-md flex items-center justify-center">
               {/* Actual school logo instead of placeholder */}
               <img 
-                src="/assets/images/school-logo.png" 
+                src= {logo} 
                 alt="R. I. Vidya Mandir" 
-                className="w-full h-full object-cover"
+                className="object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = "https://placehold.co/300x300/FAC738/1e293b?text=School+Logo";

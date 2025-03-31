@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaUserCircle } from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
+import { FaBars, FaTimes, FaQuestionCircle } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -18,113 +19,112 @@ const Navbar = () => {
   }, []);
 
   const toggleMenu = () => {
-    setIsOpen(!isOpen);
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const navbarClasses = `fixed w-full z-50 transition-all duration-300 ${
-    scrolled ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'
-  }`;
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/#about' },
+    { name: 'Facilities', path: '/#facilities' },
+    { name: 'Contact', path: '/#contact' },
+    { name: 'Support', path: '/support' },
+  ];
 
-  const textColorClass = scrolled ? 'text-gray-800' : 'text-white';
-  const logoColorClass = scrolled ? 'text-primary-600' : 'text-white';
+  const navbarClasses = `fixed w-full z-30 transition-all duration-300 ${
+    isScrolled ? 'bg-white shadow text-primary-900' : 'bg-transparent text-white'
+  }`;
 
   return (
     <nav className={navbarClasses}>
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-6 py-3">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center">
-            <span className={`text-2xl font-bold ${logoColorClass} transition-colors`}>R.I. Vidya Mandir</span>
-          </Link>
+          <Link to="/" className="font-bold text-xl">R.I. Vidya Mandir</Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-10">
-            <a href="#about" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
-              About
-            </a>
-            <a href="#facilities" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
-              Facilities
-            </a>
-            <a href="#contact" className={`font-medium ${textColorClass} hover:text-primary-500 transition-colors`}>
-              Contact
-            </a>
+          <div className="hidden md:flex space-x-6 items-center">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.name}
+                to={link.path}
+                className={`hover:text-primary-500 transition-colors ${
+                  location.pathname === link.path ? 'font-semibold' : ''
+                }`}
+              >
+                {link.name === 'Support' ? (
+                  <span className="flex items-center">
+                    <FaQuestionCircle className="mr-1" /> {link.name}
+                  </span>
+                ) : link.name}
+              </Link>
+            ))}
             {user ? (
-              <Link
-                to={`/${user.role}/dashboard`}
-                className="bg-primary-600 text-white hover:bg-primary-700 px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+              <Link 
+                to={`/${user.role}/dashboard`} 
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  isScrolled
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-white text-primary-600 hover:bg-gray-100'
+                }`}
               >
                 Dashboard
               </Link>
             ) : (
-              <Link
-                to="/login"
-                className="bg-primary-600 text-white hover:bg-primary-700 px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+              <Link 
+                to="/login" 
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  isScrolled
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'bg-white text-primary-600 hover:bg-gray-100'
+                }`}
               >
-                <span className="flex items-center">
-                  <FaUserCircle className="mr-2" /> Login
-                </span>
+                Login
               </Link>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden text-2xl" 
+            className="md:hidden text-2xl focus:outline-none"
             onClick={toggleMenu}
-            aria-label="Toggle menu"
           >
-            {isOpen ? (
-              <FaTimes className={textColorClass} />
-            ) : (
-              <FaBars className={textColorClass} />
-            )}
+            {isMenuOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        {isOpen && (
-          <div className="md:hidden mt-4 py-3 bg-white rounded-lg shadow-lg">
-            <div className="flex flex-col space-y-4 px-4 py-3">
-              <a 
-                href="#about" 
-                className="text-gray-800 hover:text-primary-600 py-2 font-medium"
-                onClick={() => setIsOpen(false)}
+        {isMenuOpen && (
+          <div className="md:hidden mt-2 py-2 bg-white text-gray-900 rounded-lg shadow-lg">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className="block px-4 py-2 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
               >
-                About
-              </a>
-              <a 
-                href="#facilities" 
-                className="text-gray-800 hover:text-primary-600 py-2 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Facilities
-              </a>
-              <a 
-                href="#contact" 
-                className="text-gray-800 hover:text-primary-600 py-2 font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                Contact
-              </a>
-              {user ? (
-                <Link
-                  to={`/${user.role}/dashboard`}
-                  className="bg-primary-600 text-white px-4 py-2.5 rounded-lg font-medium text-center mt-2"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/login"
-                  className="bg-primary-600 text-white px-4 py-2.5 rounded-lg font-medium text-center mt-2"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="flex items-center justify-center">
-                    <FaUserCircle className="mr-2" /> Login
+                {link.name === 'Support' ? (
+                  <span className="flex items-center">
+                    <FaQuestionCircle className="mr-2" /> {link.name}
                   </span>
-                </Link>
-              )}
-            </div>
+                ) : link.name}
+              </Link>
+            ))}
+            {user ? (
+              <Link
+                to={`/${user.role}/dashboard`}
+                className="block px-4 py-2 mt-1 bg-primary-600 text-white"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="block px-4 py-2 mt-1 bg-primary-600 text-white"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Login
+              </Link>
+            )}
           </div>
         )}
       </div>

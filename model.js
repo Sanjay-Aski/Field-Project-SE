@@ -253,8 +253,60 @@ const OTPSchema = new mongoose.Schema({
   expiresAt: { type: Date, required: true }
 });
 
-const OTP = mongoose.model('OTP', OTPSchema);
+const ComplaintSchema = new mongoose.Schema({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    required: true,
+    refPath: 'userRole'
+  },
+  userRole: {
+    type: String,
+    required: true,
+    enum: ['Teacher', 'Parent', 'Admin']
+  },
+  subject: { 
+    type: String, 
+    required: true 
+  },
+  description: { 
+    type: String, 
+    required: true 
+  },
+  priority: { 
+    type: String, 
+    enum: ['low', 'medium', 'high', 'critical'],
+    default: 'medium'
+  },
+  category: { 
+    type: String, 
+    enum: ['technical', 'account', 'data', 'feature', 'other'],
+    default: 'other'
+  },
+  status: { 
+    type: String, 
+    enum: ['pending', 'in-progress', 'resolved', 'closed'],
+    default: 'pending'
+  },
+  adminResponse: {
+    text: String,
+    respondedAt: Date,
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin'
+    }
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
+  updatedAt: { 
+    type: Date, 
+    default: Date.now 
+  }
+});
 
+const OTP = mongoose.model('OTP', OTPSchema);
+const Complaint = mongoose.model('Complaint', ComplaintSchema);
 
 const Parent = mongoose.model("Parent", ParentSchema);
 const Student = mongoose.model("Student", StudentSchema);
@@ -269,8 +321,6 @@ const Chat = mongoose.model("Chat", ChatSchema);
 const SchoolWorkingDay=mongoose.model("SchoolWorkingDay",SchoolWorkingDaySchema);
 const Note = mongoose.model('Note', NoteSchema)
 
-
-
 export {
   Parent,
   Student,
@@ -282,5 +332,8 @@ export {
   Donation,
   DynamicForm,
   Chat,
-  SchoolWorkingDay,Note,OTP
+  SchoolWorkingDay,
+  Note,
+  OTP,
+  Complaint
 };

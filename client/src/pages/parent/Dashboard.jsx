@@ -85,7 +85,6 @@ const ParentDashboard = () => {
   return (
     <div className="p-6 bg-sand min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-secondary-800 mb-6">Parent Dashboard</h1>
         
         {/* Children Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

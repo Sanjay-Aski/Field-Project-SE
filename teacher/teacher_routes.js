@@ -1,6 +1,6 @@
 import express from 'express';
 import { teacherAuthMiddleware, classTeacherAuthMiddleware, subjectTeacherAuthMiddleware } from './teacher_middleware.js';
-import { login, assignMarksheet, getMarksheet, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile } from './teacher_controller.js';
+import { login, assignMarksheet, getMarksheet, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile, submitComplaint, getParentContacts } from './teacher_controller.js';
 
 import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage() });
@@ -8,7 +8,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 router.post('/login', login);
-// Add the new route to get teacher profile
+
+// Make sure the profile endpoint is registered correctly
 router.get('/profile', teacherAuthMiddleware, getTeacherProfile);
 
 router.post('/assign-marksheet', teacherAuthMiddleware, classTeacherAuthMiddleware, assignMarksheet);
@@ -25,10 +26,13 @@ router.get('/attendance/:studentId', teacherAuthMiddleware, classTeacherAuthMidd
 router.get('/class-students', teacherAuthMiddleware, classTeacherAuthMiddleware, getClassStudents);
 router.post('/chat/send', teacherAuthMiddleware, subjectTeacherAuthMiddleware, sendMessageToParent);
 router.post('/chat/history', teacherAuthMiddleware, subjectTeacherAuthMiddleware, getChatHistory);
+router.get('/chat/contacts', teacherAuthMiddleware, getParentContacts);
 router.get('/notes', teacherAuthMiddleware, getNotes);
 router.get('/forms/sent', teacherAuthMiddleware, getSentForms);
 router.get('/forms/analytics/:formId', teacherAuthMiddleware, classTeacherAuthMiddleware, getFormAnalytics);
 router.post('/set-working-days-excel', teacherAuthMiddleware, classTeacherAuthMiddleware, upload.single('file'), setWorkingDaysFromExcel);
 router.post('/assign-attendance-excel', teacherAuthMiddleware, classTeacherAuthMiddleware, upload.single('file'), assignAttendanceFromExcel);
 router.post('/assign-marksheet-excel', teacherAuthMiddleware, classTeacherAuthMiddleware, upload.single('file'), assignMarksheetFromExcel);
+router.post('/support/complaint', teacherAuthMiddleware, submitComplaint);
+
 export default router;

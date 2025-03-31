@@ -94,7 +94,14 @@ const TeacherForm = () => {
     const { checked } = e.target;
     setIsClassTeacher(checked);
     
-    if (!checked) {
+    if (checked) {
+      // Ensure classTeacher is properly initialized when enabling
+      setFormData(prev => ({
+        ...prev,
+        classTeacher: { class: '', division: '' }
+      }));
+    } else {
+      // Reset when disabling
       setFormData(prev => ({
         ...prev,
         classTeacher: { class: '', division: '' }
