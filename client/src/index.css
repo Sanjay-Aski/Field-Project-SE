@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -28,16 +28,17 @@ a:hover {
 body {
   @apply bg-sand min-h-screen;
   margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
   display: flex;
   place-items: center;
-  min-width: 320px;
 }
 
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
@@ -74,6 +75,41 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+.bg-sand {
+  background-color: #f5f5f0;
+}
+
+.bg-cream {
+  background-color: #fff9e6;
+}
+
+/* Primary color palette */
+.text-primary-500, .bg-primary-500, .border-primary-500 {
+  --primary-color: #ffcb05;
+}
+
+.text-primary-600, .bg-primary-600, .border-primary-600 {
+  --primary-color: #e6b800;
+}
+
+.text-secondary-800, .bg-secondary-800, .border-secondary-800 {
+  --secondary-color: #1e293b;
+}
+
+/* Fix for loading indicators */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
