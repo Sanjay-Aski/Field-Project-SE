@@ -58,6 +58,12 @@ const TeacherChatPage = () => {
       fetchMessages(selectedContact.id, selectedContact.studentId);
     }
   }, [selectedContact]);
+
+  useEffect(() => {
+    if (selectedContact && messages.length > 0 && !loadingMessages) {
+      acknowledgeMessages(selectedContact.id, selectedContact.studentId);
+    }
+  }, [messages, selectedContact, loadingMessages]);
   
   const fetchMessages = async (parentId, studentId) => {
     try {
@@ -101,6 +107,29 @@ const TeacherChatPage = () => {
       toast.error('Failed to load messages: ' + error.message);
     } finally {
       setLoadingMessages(false);
+    }
+  };
+
+  const acknowledgeMessages = async (parentId, studentId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await fetch('http://localhost:5000/teacher/chat/acknowledge', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          parentId: parentId,
+          studentId: studentId
+        })
+      });
+      
+      // No need to handle the response as this is a background operation
+    } catch (error) {
+      console.error('Error acknowledging messages:', error);
+      // Don't show toast for this background operation
     }
   };
   
@@ -334,6 +363,15 @@ const TeacherChatPage = () => {
                               }`}
                             >
                               {typeof msg.timestamp === 'string' ? formatTimestamp(msg.timestamp) : 'Unknown time'}
+                              {msg.senderId === 'me' && (
+                                <span className="ml-1">
+                                  {msg.read ? (
+                                    <span className="text-green-400 ml-1">✓✓</span>
+                                  ) : (
+                                    <span className="text-gray-400 ml-1">✓</span>
+                                  )}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

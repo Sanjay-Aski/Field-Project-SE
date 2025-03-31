@@ -86,6 +86,13 @@ const ParentChatPage = () => {
     }
   }, [selectedTeacher]);
   
+  // Acknowledge messages when they're viewed
+  useEffect(() => {
+    if (selectedTeacher && selectedTeacher._id && messages.length > 0 && !loadingMessages) {
+      acknowledgeMessages(selectedTeacher._id);
+    }
+  }, [messages, selectedTeacher, loadingMessages]);
+  
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +136,29 @@ const ParentChatPage = () => {
       toast.error('Failed to load messages: ' + error.message);
     } finally {
       setLoadingMessages(false);
+    }
+  };
+  
+  const acknowledgeMessages = async (teacherId) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await fetch('http://localhost:5000/parent/chat/acknowledge', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          teacherId: teacherId,
+          studentId: studentId
+        })
+      });
+      
+      // No need to handle the response as this is a background operation
+    } catch (error) {
+      console.error('Error acknowledging messages:', error);
+      // Don't show toast for this background operation
     }
   };
   
@@ -185,7 +215,7 @@ const ParentChatPage = () => {
     }
   };
   
-  // Format timestamp
+  // Format timestamp with read status
   const formatTime = (timestamp) => {
     try {
       const date = new Date(timestamp);
@@ -297,8 +327,6 @@ const ParentChatPage = () => {
                   ) : (
                     <div className="space-y-4">
                       {messages.map((msg) => {
-                        console.log("Message data:", msg);
-                        
                         const isParentSender = msg.senderModel === 'Parent' || msg.isSender === true;
                         
                         return (
@@ -317,9 +345,18 @@ const ParentChatPage = () => {
                                 </p>
                               )}
                               <p className="break-words">{msg.message}</p>
-                              <p className="text-xs text-gray-500 text-right mt-1">
-                                {formatTime(msg.timestamp)}
-                              </p>
+                              <div className="flex items-center justify-end mt-1 text-xs text-gray-500">
+                                <span>{formatTime(msg.timestamp)}</span>
+                                {isParentSender && (
+                                  <span className="ml-1">
+                                    {msg.read ? (
+                                      <span className="text-blue-500 ml-1">✓✓</span>
+                                    ) : (
+                                      <span className="text-gray-400 ml-1">✓</span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );

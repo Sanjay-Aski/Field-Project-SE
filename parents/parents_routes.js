@@ -12,6 +12,7 @@ import {
     getTeacherDetails,
     sendMessageToTeacher, 
     getChatHistory,
+    acknowledgeMessages,
     createDonation,
     getPendingDonations,
     applyForDonation,
@@ -43,6 +44,7 @@ router.get('/teacher-details/:studentId', parentAuthMiddleware, getTeacherDetail
 // Chat routes
 router.post('/chat/send', parentAuthMiddleware, sendMessageToTeacher);
 router.post('/chat/history', parentAuthMiddleware, getChatHistory);
+router.post('/chat/acknowledge', parentAuthMiddleware, acknowledgeMessages);
 
 // Forms routes
 router.get('/forms/:studentId', parentAuthMiddleware, getForms);

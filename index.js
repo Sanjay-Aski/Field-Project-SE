@@ -20,10 +20,8 @@ const port = process.env.PORT || 4000;
 
 app.use(cors());
 
-// Log environment variables for debugging (remove in production)
 console.log('MongoDB URI:', process.env.MONGO_URI ? 'URI exists' : 'URI missing');
 
-// Connect to MongoDB with error handling
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => {
@@ -46,7 +44,10 @@ if (process.env.NODE_ENV === 'production') {
         res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
     });
 }
-
-app.listen(port, () => {
+app.get('/', (req, res) => {
+    res.send('Hello, Nikhil Landing Page kab bana rha hai?');
+  });
+  
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
-});
+  });

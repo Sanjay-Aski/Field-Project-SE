@@ -1,6 +1,6 @@
 import express from 'express';
 import { teacherAuthMiddleware, classTeacherAuthMiddleware, subjectTeacherAuthMiddleware } from './teacher_middleware.js';
-import { login, assignMarksheet, getMarksheet, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile, submitComplaint, getParentContacts } from './teacher_controller.js';
+import { login, assignMarksheet, getMarksheet, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, acknowledgeMessages, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile, submitComplaint, getParentContacts } from './teacher_controller.js';
 
 import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,6 +26,7 @@ router.get('/attendance/:studentId', teacherAuthMiddleware, classTeacherAuthMidd
 router.get('/class-students', teacherAuthMiddleware, classTeacherAuthMiddleware, getClassStudents);
 router.post('/chat/send', teacherAuthMiddleware, subjectTeacherAuthMiddleware, sendMessageToParent);
 router.post('/chat/history', teacherAuthMiddleware, subjectTeacherAuthMiddleware, getChatHistory);
+router.post('/chat/acknowledge', teacherAuthMiddleware, acknowledgeMessages);
 router.get('/chat/contacts', teacherAuthMiddleware, getParentContacts);
 router.get('/notes', teacherAuthMiddleware, getNotes);
 router.get('/forms/sent', teacherAuthMiddleware, getSentForms);

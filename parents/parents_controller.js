@@ -379,7 +379,9 @@ const getChatHistory = async (req, res) => {
             receiverName: msg.receiverId.fullName,
             senderModel: msg.senderModel,
             timestamp: msg.createdAt,
-            isSender: msg.senderId.toString() === parent._id.toString()
+            isSender: msg.senderId.toString() === parent._id.toString(),
+            read: msg.read,
+            readAt: msg.readAt
         }));
 
         res.status(200).json({
@@ -390,6 +392,56 @@ const getChatHistory = async (req, res) => {
     } catch (error) {
         console.error('Error getting chat history:', error);
         res.status(500).send({ error: 'Error getting chat history.', details: error.message });
+    }
+};
+
+const acknowledgeMessages = async (req, res) => {
+    try {
+        const { teacherId, studentId } = req.body;
+        const parentId = req.parent._id;
+
+        if (!teacherId || !studentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Teacher ID and Student ID are required'
+            });
+        }
+
+        if (!parentId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required'
+            });
+        }
+
+        // Update all unread messages from this teacher to read
+        const result = await Chat.updateMany(
+            {
+                studentId: studentId,
+                senderId: teacherId,
+                receiverId: parentId,
+                read: false
+            },
+            {
+                $set: {
+                    read: true,
+                    readAt: new Date()
+                }
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Messages acknowledged',
+            updatedCount: result.nModified || result.modifiedCount || 0
+        });
+    } catch (error) {
+        console.error('Error acknowledging messages:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error acknowledging messages',
+            error: error.message
+        });
     }
 };
 
@@ -635,6 +687,7 @@ export {
     getTeacherDetails,
     sendMessageToTeacher, 
     getChatHistory,
+    acknowledgeMessages,
     createDonation,
     getPendingDonations,
     applyForDonation,

@@ -661,6 +661,8 @@ const getChatHistory = async (req, res) => {
             senderId: msg.senderId._id.toString() === teacherId.toString() ? 'me' : msg.senderId._id,
             timestamp: msg.createdAt,
             senderName: msg.senderId.fullName,
+            read: msg.read,
+            readAt: msg.readAt
         }));
 
         res.status(200).json({
@@ -671,6 +673,49 @@ const getChatHistory = async (req, res) => {
     } catch (error) {
         console.error('Error getting chat history:', error);
         res.status(500).send({ error: 'Error getting chat history.', details: error.message });
+    }
+};
+
+const acknowledgeMessages = async (req, res) => {
+    try {
+        const { parentId, studentId } = req.body;
+        const teacherId = req.teacher._id;
+
+        if (!parentId || !studentId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Parent ID and Student ID are required'
+            });
+        }
+
+        // Update all unread messages from this parent to read
+        const result = await Chat.updateMany(
+            {
+                studentId: studentId,
+                senderId: parentId,
+                receiverId: teacherId,
+                read: false
+            },
+            {
+                $set: {
+                    read: true,
+                    readAt: new Date()
+                }
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Messages acknowledged',
+            updatedCount: result.nModified || result.modifiedCount || 0
+        });
+    } catch (error) {
+        console.error('Error acknowledging messages:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error acknowledging messages',
+            error: error.message
+        });
     }
 };
 
@@ -1178,6 +1223,7 @@ export {
     getClassStudents,
     sendMessageToParent,
     getChatHistory,
+    acknowledgeMessages,
     getNotes,
     getSentForms,
     setWorkingDaysFromExcel,

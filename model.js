@@ -208,6 +208,14 @@ const ChatSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId, 
       ref: 'Student',
       required: true 
+  },
+  read: {
+      type: Boolean,
+      default: false
+  },
+  readAt: {
+      type: Date,
+      default: null
   }
 }, { 
   timestamps: true 
