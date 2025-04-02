@@ -22,6 +22,12 @@ const GroupChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView();
+    }
+  }, [loading]);
+
   const handleGroupSelect = (group) => {
     setSelectedGroup(group);
     setLoading(true);

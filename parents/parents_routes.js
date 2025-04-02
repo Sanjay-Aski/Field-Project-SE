@@ -21,7 +21,10 @@ import {
     getParentProfile,
     submitComplaint,
     getUnreadMessageCount,
-    getUnreadMessageCountAll
+    getUnreadMessageCountAll,
+    getMarksheetByExamType,
+    getMarksheetExamTypes,
+    getClassSubjects
 } from './parents_controller.js';
 
 const router = express.Router();
@@ -29,7 +32,6 @@ const router = express.Router();
 router.post('/login', login);
 router.get('/children', parentAuthMiddleware, getChildren);
 router.get('/forms/:studentId', parentAuthMiddleware, getForms);
-router.get('/marksheet/:studentId', parentAuthMiddleware, getMarksheet);
 router.get('/attendance/:studentId', parentAuthMiddleware, getAttendanceReport);
 router.post('/note', parentAuthMiddleware, sendNoteToTeacher);
 router.post('/note/acknowledge/:noteId', parentAuthMiddleware, acknowledgeNote);
@@ -47,5 +49,13 @@ router.get('/donations/pending', parentAuthMiddleware, getPendingDonations);
 router.post('/donation/:donationId/apply', parentAuthMiddleware, applyForDonation);
 router.get('/profile', parentAuthMiddleware, getParentProfile);
 router.post('/support/complaint', parentAuthMiddleware, submitComplaint);
+
+// Add this new route before the marksheet routes
+router.post('/class-subjects', parentAuthMiddleware, getClassSubjects);
+
+// Make sure these routes are defined in this specific order
+router.get('/marksheet/exams/:studentId', parentAuthMiddleware, getMarksheetExamTypes);
+router.get('/marksheet/:studentId/:examType', parentAuthMiddleware, getMarksheetByExamType);
+router.get('/marksheet/:studentId', parentAuthMiddleware, getMarksheet);
 
 export default router;

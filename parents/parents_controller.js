@@ -137,6 +137,80 @@ const getMarksheet = async (req, res) => {
     }
 };
 
+const getMarksheetByExamType = async (req, res) => {
+    try {
+        const { studentId, examType } = req.params;
+        const parent = req.parent;
+
+        // Verify this is parent's child
+        if (!parent.children.includes(studentId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to view this student\'s marksheets'
+            });
+        }
+
+        // Check if the student exists
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found'
+            });
+        }
+
+        const marksheet = await MarkSheet.findOne({ 
+            studentId,
+            examType
+        });
+
+        // If no marksheet is found, return an empty array instead of a 404 error
+        // This allows the client to show a "no marksheet available" message
+        if (!marksheet) {
+            return res.status(200).json([]);
+        }
+
+        res.status(200).json([marksheet]); // Return as array for consistency with frontend code
+    } catch (error) {
+        console.error('Error fetching marksheet by exam type:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch marksheet',
+            error: error.message
+        });
+    }
+};
+
+const getMarksheetExamTypes = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const parent = req.parent;
+
+        // Verify this is parent's child
+        if (!parent.children.includes(studentId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to view this student\'s marksheets'
+            });
+        }
+
+        const marksheets = await MarkSheet.find({ studentId }).distinct('examType');
+        
+        if (!marksheets || marksheets.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        res.status(200).json(marksheets);
+    } catch (error) {
+        console.error('Error fetching marksheet exam types:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch marksheet exam types',
+            error: error.message
+        });
+    }
+};
+
 const getAttendanceReport = async (req, res) => {
     try {
         const { studentId } = req.params;
@@ -809,12 +883,99 @@ const submitComplaint = async (req, res) => {
     }
 };
 
+const getStudentMarksheets = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const parentId = req.parent._id;
+
+        // Verify this is parent's child
+        const parent = await Parent.findById(parentId);
+        if (!parent?.children.includes(studentId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to view this student\'s marksheets'
+            });
+        }
+
+        const marksheets = await MarkSheet.find({ studentId })
+            .sort({ examType: 1, createdAt: -1 });
+
+        if (!marksheets || marksheets.length === 0) {
+            return res.status(200).json({
+                success: true,
+                marksheets: [],
+                message: 'No marksheets found for this student'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            marksheets,
+            message: 'Marksheets fetched successfully'
+        });
+    } catch (error) {
+        console.error('Error fetching marksheets:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch marksheets',
+            error: error.message
+        });
+    }
+};
+
+const getClassSubjects = async (req, res) => {
+    try {
+        const { class: classNum, division } = req.body;
+        
+        if (!classNum || !division) {
+            return res.status(400).json({
+                success: false,
+                message: 'Class and division are required'
+            });
+        }
+
+        // Find all teachers who teach this class and get their subjects
+        const teachers = await Teacher.find({
+            $or: [
+                { 'subjects.class': parseInt(classNum), 'subjects.division': division },
+                { 'classTeacher.class': parseInt(classNum), 'classTeacher.division': division }
+            ]
+        });
+        
+        // Extract unique subjects
+        const subjects = new Set();
+        
+        teachers.forEach(teacher => {
+            teacher.subjects.forEach(subject => {
+                if (subject.class.toString() === classNum.toString() && 
+                    subject.division === division) {
+                    subjects.add(subject.subject);
+                }
+            });
+        });
+        
+        res.status(200).json({
+            success: true,
+            subjects: Array.from(subjects)
+        });
+    } catch (error) {
+        console.error('Error fetching class subjects:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching class subjects',
+            error: error.message
+        });
+    }
+};
+
 export { 
     login,
     getChildren,
     fillForm, 
     getForms, 
-    getMarksheet, 
+    getMarksheet,
+    getMarksheetByExamType,
+    getMarksheetExamTypes, 
     getAttendanceReport, 
     sendNoteToTeacher, 
     acknowledgeNote, 
@@ -830,5 +991,7 @@ export {
     getParentProfile,
     submitComplaint,
     getUnreadMessageCount,
-    getUnreadMessageCountAll
+    getUnreadMessageCountAll,
+    getStudentMarksheets,
+    getClassSubjects
 };

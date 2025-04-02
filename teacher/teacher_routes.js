@@ -1,6 +1,6 @@
 import express from 'express';
 import { teacherAuthMiddleware, classTeacherAuthMiddleware, subjectTeacherAuthMiddleware, classTeacherAuthForClassMiddleware } from './teacher_middleware.js';
-import { login, assignMarksheet, getMarksheet, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, acknowledgeMessages, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile, submitComplaint, getParentContacts, getUnreadMessagesCount } from './teacher_controller.js';
+import { login, assignMarksheet, getMarksheet, getClassMarksheets, giveNote, acknowledgeNote, giveForm, getFormResponses, getAttendanceReport, getClassStudents, getChatHistory, sendMessageToParent, acknowledgeMessages, getNotes, getSentForms, getFormAnalytics, assignAttendance, setWorkingDays, getAttendance, setWorkingDaysFromExcel, assignAttendanceFromExcel, assignMarksheetFromExcel, getTeacherProfile, submitComplaint, getParentContacts, getUnreadMessagesCount, getMarksheets } from './teacher_controller.js';
 
 import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage() });
@@ -14,6 +14,8 @@ router.get('/profile', teacherAuthMiddleware, getTeacherProfile);
 
 router.post('/assign-marksheet', teacherAuthMiddleware, classTeacherAuthMiddleware, assignMarksheet);
 router.get('/marksheet/:studentId', teacherAuthMiddleware, classTeacherAuthMiddleware, getMarksheet);
+router.get('/class-marksheets', teacherAuthMiddleware, getClassMarksheets);
+router.get('/marksheets', teacherAuthMiddleware, getMarksheets); // Add this explicit route for getMarksheets
 
 // Update attendance routes to use classTeacherAuthForClassMiddleware
 router.post('/assign-attendance', teacherAuthMiddleware, classTeacherAuthForClassMiddleware, assignAttendance);
@@ -27,7 +29,11 @@ router.post('/give-note', teacherAuthMiddleware, subjectTeacherAuthMiddleware, g
 router.post('/acknowledge-note/:noteId', teacherAuthMiddleware, acknowledgeNote);
 router.post('/give-form', teacherAuthMiddleware, classTeacherAuthMiddleware, giveForm);
 router.get('/form-responses/:formId', teacherAuthMiddleware, classTeacherAuthMiddleware, getFormResponses);
-router.get('/class-students', teacherAuthMiddleware, classTeacherAuthMiddleware, getClassStudents);
+
+// Update this route to use just teacherAuthMiddleware instead of classTeacherAuthMiddleware
+// This allows any teacher to access student lists, which is needed for marksheet creation
+router.get('/class-students', teacherAuthMiddleware, getClassStudents);
+
 router.post('/chat/send', teacherAuthMiddleware, subjectTeacherAuthMiddleware, sendMessageToParent);
 router.post('/chat/history', teacherAuthMiddleware, subjectTeacherAuthMiddleware, getChatHistory);
 router.post('/chat/acknowledge', teacherAuthMiddleware, acknowledgeMessages);

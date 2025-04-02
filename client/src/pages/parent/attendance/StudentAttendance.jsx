@@ -19,7 +19,7 @@ const StudentAttendance = () => {
         const token = localStorage.getItem('token');
         
         // First fetch student details
-        const studentResponse = await fetch(`http://192.168.103.107:5000/parent/children`, {
+        const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -41,7 +41,7 @@ const StudentAttendance = () => {
         setStudent(currentStudent);
         
         // Then fetch attendance data
-        const attendanceResponse = await fetch(`http://192.168.103.107:5000/parent/attendance/${studentId}`, {
+        const attendanceResponse = await fetch(`http://localhost:5000/parent/attendance/${studentId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

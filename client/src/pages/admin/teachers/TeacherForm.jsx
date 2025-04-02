@@ -33,7 +33,7 @@ const TeacherForm = () => {
           const token = localStorage.getItem('token');
           
           // Add endpoint to get a teacher by ID in admin_controller.js and admin_route.js
-          const response = await fetch(`http://192.168.103.107:5000/admin/teacher/${id}`, {
+          const response = await fetch(`http://localhost:5000/admin/teacher/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -207,7 +207,7 @@ const TeacherForm = () => {
       
       if (id) {
         // Update existing teacher
-        const response = await fetch(`http://192.168.103.107:5000/admin/teacher/${id}`, {
+        const response = await fetch(`http://localhost:5000/admin/teacher/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ const TeacherForm = () => {
         toast.success('Teacher updated successfully');
       } else {
         // Add new teacher
-        const response = await fetch('http://192.168.103.107:5000/admin/teacher', {
+        const response = await fetch('http://localhost:5000/admin/teacher', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

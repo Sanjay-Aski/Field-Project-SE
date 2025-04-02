@@ -180,7 +180,7 @@ const ParentChatPage = () => {
           // to ensure notification persists even on page reload
           try {
             console.log("Fetching unread counts for student:", studentId); // Debugging
-            const unreadResponse = await fetch('http://192.168.103.107:5000/parent/chat/unread-count-all', {
+            const unreadResponse = await fetch('http://localhost:5000/parent/chat/unread-count-all', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -213,7 +213,7 @@ const ParentChatPage = () => {
           }
 
           // Now continue with normal data fetching
-          const studentResponse = await fetch(`http://192.168.103.107:5000/parent/children`, {
+          const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -234,7 +234,7 @@ const ParentChatPage = () => {
           
           setStudent(currentStudent);
           
-          const teachersResponse = await fetch(`http://192.168.103.107:5000/parent/teacher-details/${studentId}`, {
+          const teachersResponse = await fetch(`http://localhost:5000/parent/teacher-details/${studentId}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -272,7 +272,7 @@ const ParentChatPage = () => {
       setLoadingMessages(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.103.107:5000/parent/chat/history', {
+      const response = await fetch('http://localhost:5000/parent/chat/history', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -332,7 +332,7 @@ const ParentChatPage = () => {
     try {
       const token = localStorage.getItem('token');
       
-      await fetch('http://192.168.103.107:5000/parent/chat/acknowledge', {
+      await fetch('http://localhost:5000/parent/chat/acknowledge', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -359,6 +359,12 @@ const ParentChatPage = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!loadingMessages && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView();
+    }
+  }, [loadingMessages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();

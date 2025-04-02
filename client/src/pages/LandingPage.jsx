@@ -38,7 +38,7 @@ const LandingPage = () => {
               className="rounded-lg shadow-xl w-full h-auto object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/600x400?text=R.I.+Vidya+Mandir';
+                e.target.src = 'https://via.placeholder.com/600x400?text=School+Building';
               }}
             />
           </div>

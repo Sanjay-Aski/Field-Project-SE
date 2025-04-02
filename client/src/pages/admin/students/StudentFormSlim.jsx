@@ -27,7 +27,7 @@ const StudentFormSlim = () => {
     const fetchParents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://192.168.103.107:5000/admin/parent', {
+        const response = await fetch('http://localhost:5000/admin/parent', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -53,7 +53,7 @@ const StudentFormSlim = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch(`http://192.168.103.107:5000/admin/student/${id}`, {
+        const response = await fetch(`http://localhost:5000/admin/student/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -142,7 +142,7 @@ const StudentFormSlim = () => {
       
       if (id) {
         // Update existing student
-        const response = await fetch(`http://192.168.103.107:5000/admin/student/${id}`, {
+        const response = await fetch(`http://localhost:5000/admin/student/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ const StudentFormSlim = () => {
         toast.success('Student updated successfully');
       } else {
         // Add new student
-        const response = await fetch('http://192.168.103.107:5000/admin/student', {
+        const response = await fetch('http://localhost:5000/admin/student', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

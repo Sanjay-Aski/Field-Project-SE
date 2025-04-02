@@ -53,34 +53,61 @@ const getAttendanceReport = async (req, res) => {
 
 const assignMarksheet = async (req, res) => {
     try {
-        const { studentId, marks } = req.body;
-        const teacher = req.teacher;
+        const { marksheets } = req.body;
+        const teacherId = req.teacher._id;
 
-        const student = await Student.findById(studentId);
-        if (!student) {
-            return res.status(404).send({ error: 'Student not found.' });
+        // Validate the teacher's authorization
+        for (const sheet of marksheets) {
+            const student = await Student.findById(sheet.studentId);
+            if (!student) {
+                return res.status(404).json({ error: `Student not found: ${sheet.studentId}` });
+            }
+
+            // Calculate total marks and percentage
+            const totalObtained = sheet.subjects.reduce((sum, subj) => sum + subj.marks, 0);
+            const totalPossible = sheet.subjects.reduce((sum, subj) => sum + subj.totalMarks, 0);
+            const percentage = (totalObtained / totalPossible) * 100;
+
+            // Create or update marksheet
+            await MarkSheet.findOneAndUpdate(
+                { 
+                    studentId: sheet.studentId,
+                    examType: sheet.examType
+                },
+                {
+                    $set: {
+                        subjects: sheet.subjects,
+                        totalMarks: totalPossible,
+                        obtainedMarks: totalObtained,
+                        percentage: percentage.toFixed(2)
+                    }
+                },
+                { upsert: true, new: true }
+            );
         }
 
-        const obtainedMarks = marks.subjects.reduce((total, subject) => total + subject.marks, 0);
-        const totalPossibleMarks = marks.subjects.reduce((total, subject) => total + subject.totalMarks, 0);
-        const percentage = (obtainedMarks / totalPossibleMarks) * 100;
-
-        const marksheet = new MarkSheet({
-            studentId: studentId,
-            examType: marks.examType,
-            subjects: marks.subjects,
-            totalMarks: totalPossibleMarks,
-            obtainedMarks: obtainedMarks,
-            percentage: percentage.toFixed(2),
-            overallRemarks: marks.overallRemarks
-        });
-
-        await marksheet.save();
-
-        res.status(201).send("marksheet assigned");
+        res.status(200).json({ message: 'Marksheets updated successfully' });
     } catch (error) {
         console.error('Error assigning marksheet:', error);
-        res.status(500).send({ error: 'Error assigning marksheet.' });
+        res.status(500).json({ error: 'Failed to assign marksheet' });
+    }
+};
+
+const getMarksheets = async (req, res) => {
+    try {
+        const { studentId, examType } = req.query;
+        const query = {};
+        
+        if (studentId) query.studentId = studentId;
+        if (examType) query.examType = examType;
+
+        const marksheets = await MarkSheet.find(query)
+            .populate('studentId', 'fullName roll class division');
+
+        res.status(200).json({ marksheets });
+    } catch (error) {
+        console.error('Error fetching marksheets:', error);
+        res.status(500).json({ error: 'Failed to fetch marksheets' });
     }
 };
 
@@ -277,7 +304,7 @@ const getMarksheet = async (req, res) => {
             return res.status(404).send({ error: 'Student not found.' });
         }
 
-        const marksheet = await MarkSheet.findOne({ student: studentId, teacher: teacher._id });
+        const marksheet = await MarkSheet.findOne({ studentId });
         if (!marksheet) {
             return res.status(404).send({ error: 'Marksheet not found.' });
         }
@@ -286,6 +313,82 @@ const getMarksheet = async (req, res) => {
     } catch (error) {
         console.error('Error getting marksheet:', error);
         res.status(500).send({ error: 'Error getting marksheet.' });
+    }
+};
+
+const getClassMarksheets = async (req, res) => {
+    try {
+        const { classNum, division, examType } = req.query;
+        
+        if (!classNum || !division) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Class and division are required parameters' 
+            });
+        }
+
+        // First get all students in this class
+        const students = await Student.find({
+            class: classNum,
+            division: division
+        }).select('_id fullName roll');
+
+        if (!students || students.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No students found in this class'
+            });
+        }
+
+        // Get all student IDs
+        const studentIds = students.map(student => student._id);
+
+        // Build the query
+        const query = {
+            studentId: { $in: studentIds }
+        };
+
+        if (examType) {
+            query.examType = examType;
+        }
+
+        // Find marksheets for all these students
+        const marksheets = await MarkSheet.find(query)
+            .populate('studentId', 'fullName roll');
+
+        // Format response to be more useful for the frontend
+        const formattedResponse = students.map(student => {
+            const studentMarksheets = marksheets.filter(
+                ms => ms.studentId._id.toString() === student._id.toString()
+            );
+            
+            return {
+                student: {
+                    _id: student._id,
+                    fullName: student.fullName,
+                    roll: student.roll
+                },
+                marksheets: studentMarksheets.map(ms => ({
+                    _id: ms._id,
+                    examType: ms.examType,
+                    percentage: ms.percentage,
+                    obtainedMarks: ms.obtainedMarks,
+                    totalMarks: ms.totalMarks
+                }))
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: formattedResponse
+        });
+    } catch (error) {
+        console.error('Error fetching class marksheets:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching class marksheets',
+            error: error.message
+        });
     }
 };
 
@@ -570,9 +673,49 @@ const getClassStudents = async (req, res) => {
     try {
         const teacher = req.teacher;
         // Get class and division from query parameters if provided
-        const classFilter = req.query.class ? req.query.class : null;
+        const classFilter = req.query.class || null;
         const divisionFilter = req.query.division || null;
+        const studentId = req.query.studentId || null;
         
+        // If studentId is provided, validate that it's a valid MongoDB ObjectID
+        if (studentId) {
+            // Check if ID is a valid MongoDB ObjectId before querying
+            if (!mongoose.Types.ObjectId.isValid(studentId)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid student ID format'
+                });
+            }
+            
+            const student = await Student.findById(studentId).populate('parentId', 'fullName');
+            
+            if (!student) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Student not found'
+                });
+            }
+            
+            // Check if teacher has permission to access this student (more permissive check)
+            const hasAccess = teacher.classTeacher && 
+                              teacher.classTeacher.class === student.class &&
+                              teacher.classTeacher.division === student.division ||
+                              teacher.subjects.some(subject => 
+                                subject.class === student.class && 
+                                subject.division === subject.division
+                              );
+            
+            if (!hasAccess) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You do not have permission to access this student'
+                });
+            }
+            
+            return res.status(200).json([student]);
+        }
+        
+        // If no studentId is provided, require class and division
         if (!classFilter || !divisionFilter) {
             return res.status(400).json({
                 success: false,
@@ -580,16 +723,13 @@ const getClassStudents = async (req, res) => {
             });
         }
 
-        // Convert to strings for comparison
-        const classFilterStr = classFilter.toString();
-        
         // Verify that the teacher is authorized to view this class
         const isClassTeacher = teacher.classTeacher && 
-                              teacher.classTeacher.class.toString() === classFilterStr && 
+                              teacher.classTeacher.class.toString() === classFilter.toString() && 
                               teacher.classTeacher.division === divisionFilter;
                               
         const isSubjectTeacher = teacher.subjects.some(subject => 
-            subject.class.toString() === classFilterStr && 
+            subject.class.toString() === classFilter.toString() && 
             subject.division === divisionFilter
         );
 
@@ -1316,6 +1456,7 @@ export {
     assignAttendance, 
     getAttendance,
     getMarksheet, 
+    getClassMarksheets,
     getFormAnalytics,
     giveNote, 
     acknowledgeNote, 
@@ -1334,6 +1475,7 @@ export {
     getTeacherProfile,
     submitComplaint,
     getParentContacts,
-    getUnreadMessagesCount
+    getUnreadMessagesCount,
+    getMarksheets
 };
 

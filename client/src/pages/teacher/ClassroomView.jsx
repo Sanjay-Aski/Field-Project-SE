@@ -17,7 +17,7 @@ const ClassroomView = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch(`http://192.168.103.107:5000/teacher/class-students?class=${classId}&division=${division}`, {
+        const response = await fetch(`http://localhost:5000/teacher/class-students?class=${classId}&division=${division}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -44,7 +44,7 @@ const ClassroomView = () => {
     const fetchTeacherProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://192.168.103.107:5000/teacher/profile', {
+        const response = await fetch('http://localhost:5000/teacher/profile', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

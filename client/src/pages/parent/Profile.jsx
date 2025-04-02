@@ -13,7 +13,7 @@ const ParentProfile = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch('http://192.168.103.107:5000/parent/profile', {
+        const response = await fetch('http://localhost:5000/parent/profile', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

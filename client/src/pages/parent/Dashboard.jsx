@@ -21,7 +21,7 @@ const ParentDashboard = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch('http://192.168.103.107:5000/parent/children', {
+        const response = await fetch('http://localhost:5000/parent/children', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -38,7 +38,7 @@ const ParentDashboard = () => {
         setChildren(Array.isArray(data) ? data : []);
         
         // Fetch pending forms count
-        const formsResponse = await fetch('http://192.168.103.107:5000/parent/forms/not-filled', {
+        const formsResponse = await fetch('http://localhost:5000/parent/forms/not-filled', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

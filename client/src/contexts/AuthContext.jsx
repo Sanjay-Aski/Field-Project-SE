@@ -54,13 +54,13 @@ export const AuthProvider = ({ children }) => {
       
       switch(role) {
         case 'admin':
-          endpoint = 'http://192.168.103.107:5000/admin/login';
+          endpoint = 'http://localhost:5000/admin/login';
           break;
         case 'teacher':
-          endpoint = 'http://192.168.103.107:5000/teacher/login';
+          endpoint = 'http://localhost:5000/teacher/login';
           break;
         case 'parent':
-          endpoint = 'http://192.168.103.107:5000/parent/login';
+          endpoint = 'http://localhost:5000/parent/login';
           break;
         default:
           throw new Error('Invalid role');
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
 
   const registerAdmin = async (email, password, adminKey) => {
     try {
-      const response = await axios.post('http://192.168.103.107:5000/admin/register', { 
+      const response = await axios.post('http://localhost:5000/admin/register', { 
         email, 
         password,
         adminKey

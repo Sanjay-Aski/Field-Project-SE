@@ -43,7 +43,7 @@ const TeacherChatPage = () => {
         
         // IMPORTANT: Always fetch unread counts first to maintain notification state
         try {
-          const unreadCountResponse = await fetch('http://192.168.103.107:5000/teacher/chat/unread-counts', {
+          const unreadCountResponse = await fetch('http://localhost:5000/teacher/chat/unread-counts', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -77,7 +77,7 @@ const TeacherChatPage = () => {
         }
 
         // Now fetch contacts as normal
-        const response = await fetch('http://192.168.103.107:5000/teacher/chat/contacts', {
+        const response = await fetch('http://localhost:5000/teacher/chat/contacts', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -351,12 +351,18 @@ const TeacherChatPage = () => {
     };
   }, [selectedContact]);
 
+  useEffect(() => {
+    if (!loadingMessages && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView();
+    }
+  }, [loadingMessages]);
+
   const fetchMessages = async (parentId, studentId) => {
     try {
       setLoadingMessages(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://192.168.103.107:5000/teacher/chat/history', {
+      const response = await fetch('http://localhost:5000/teacher/chat/history', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -411,7 +417,7 @@ const TeacherChatPage = () => {
     try {
       const token = localStorage.getItem('token');
 
-      await fetch('http://192.168.103.107:5000/teacher/chat/acknowledge', {
+      await fetch('http://localhost:5000/teacher/chat/acknowledge', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

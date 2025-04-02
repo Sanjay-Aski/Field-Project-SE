@@ -29,7 +29,7 @@ const ParentForm = () => {
           setLoading(true);
           const token = localStorage.getItem('token');
           
-          const response = await fetch(`http://192.168.103.107:5000/admin/parent/${id}`, {
+          const response = await fetch(`http://localhost:5000/admin/parent/${id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -200,7 +200,7 @@ const ParentForm = () => {
       
       if (id) {
         // Update existing parent
-        const response = await fetch(`http://192.168.103.107:5000/admin/parent/${id}`, {
+        const response = await fetch(`http://localhost:5000/admin/parent/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ const ParentForm = () => {
           
           if (child._id) {
             // Update existing child
-            const childResponse = await fetch(`http://192.168.103.107:5000/admin/student/${child._id}`, {
+            const childResponse = await fetch(`http://localhost:5000/admin/student/${child._id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ const ParentForm = () => {
             }
           } else {
             // Add new child
-            const childResponse = await fetch('http://192.168.103.107:5000/admin/student', {
+            const childResponse = await fetch('http://localhost:5000/admin/student', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -256,7 +256,7 @@ const ParentForm = () => {
         toast.success('Parent and children updated successfully');
       } else {
         // Add new parent
-        const response = await fetch('http://192.168.103.107:5000/admin/parent', {
+        const response = await fetch('http://localhost:5000/admin/parent', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ const ParentForm = () => {
               parentId
             };
             
-            const childResponse = await fetch('http://192.168.103.107:5000/admin/student', {
+            const childResponse = await fetch('http://localhost:5000/admin/student', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

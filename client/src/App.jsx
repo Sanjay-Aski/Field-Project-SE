@@ -32,6 +32,11 @@ import TeacherChatPage from './pages/teacher/chat/TeacherChatPage';
 import ParentChatPage from './pages/parent/chat/ParentChatPage';
 import AttendanceEntryPage from './pages/teacher/attendance/AttendanceEntryPage';
 import StudentAttendance from './pages/parent/attendance/StudentAttendance';
+import MarksheetEntry from './pages/teacher/marksheet/MarksheetEntry'; // Updated path
+import MarksheetView from './pages/parent/marksheet/MarksheetView'; // Updated path
+import MarksheetPage from './pages/teacher/marksheet/MarksheetPage';
+import MarksheetDetail from './pages/teacher/marksheet/MarksheetDetail';
+import StudentMarksheet from './pages/parent/marksheet/StudentMarksheet'; // Import StudentMarksheet
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -110,7 +115,10 @@ function App() {
             <Route path="classroom/:classId/:division" element={<ClassroomView />} />
             <Route path="classes" element={<Navigate to="/teacher/dashboard" replace />} />
             <Route path="attendance" element={<AttendanceEntryPage />} />
-            <Route path="marksheets" element={<div className="p-4">Marksheets Management Page</div>} />
+            <Route path="marksheets" element={<MarksheetPage />} />
+            <Route path="marksheets/:id" element={<MarksheetView />} />
+            <Route path="marksheet/create" element={<MarksheetEntry />} /> {/* Move this route before the dynamic route */}
+            <Route path="marksheet/:studentId" element={<MarksheetDetail />} />
             <Route path="forms" element={<div className="p-4">Forms Management Page</div>} />
             <Route path="chat" element={<TeacherChatPage />} />
             <Route path="analytics" element={<div className="p-4">Analytics Page</div>} />
@@ -134,6 +142,7 @@ function App() {
             <Route path="chat/:studentId?" element={<ParentChatPage />} />
             <Route path="forms/pending" element={<div className="p-4">Pending Forms Page</div>} />
             <Route path="teachers" element={<div className="p-4">Teachers Page</div>} />
+            <Route path="marksheet/:studentId" element={<StudentMarksheet />} /> {/* Updated route */}
             <Route path="support/complaint" element={<ComplaintForm />} />
             <Route index element={<Navigate to="/parent/dashboard" replace />} />
           </Route>
