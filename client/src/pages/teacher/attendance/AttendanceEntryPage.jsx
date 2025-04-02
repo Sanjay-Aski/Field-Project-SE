@@ -414,45 +414,6 @@ const AttendanceEntryPage = () => {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="bg-gray-50 border-b p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-              <select
-                value={selectedClass}
-                onChange={handleClassChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                disabled={isClassTeacher && teacher && teacher.classTeacher}
-              >
-                <option value="">Select Class</option>
-                {isClassTeacher && teacher && teacher.classTeacher ? (
-                  <option value={teacher.classTeacher.class}>{teacher.classTeacher.class}</option>
-                ) : (
-                  [...new Set(classes.map(c => c.class))].map(classNum => (
-                    <option key={classNum} value={classNum}>{classNum}</option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Division</label>
-              <select
-                value={selectedDivision}
-                onChange={handleDivisionChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                disabled={isClassTeacher && teacher && teacher.classTeacher}
-              >
-                <option value="">Select Division</option>
-                {isClassTeacher && teacher && teacher.classTeacher ? (
-                  <option value={teacher.classTeacher.division}>{teacher.classTeacher.division}</option>
-                ) : (
-                  classes
-                    .filter(c => c.class.toString() === selectedClass)
-                    .map(c => (
-                      <option key={c.division} value={c.division}>{c.division}</option>
-                    ))
-                )}
-              </select>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>

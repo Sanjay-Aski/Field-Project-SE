@@ -11,6 +11,7 @@ import {
     getAllDonations,
     getPendingDonations,
     assignDonation,
+    rejectDonation,
     updateParent,
     updateTeacher,
     updateStudent,
@@ -42,11 +43,12 @@ router.delete('/parent/:id', authMiddleware, removeParent);
 router.post('/student', authMiddleware, addStudent);
 router.delete('/student/:id', authMiddleware, removeStudent);
 router.get('/donations', authMiddleware, getAllDonations);
-router.get('/donations/pending',authMiddleware, getPendingDonations);
-router.post('/donations/assign',authMiddleware, assignDonation);
-router.put('/parent/:id',authMiddleware,updateParent);
-router.put('/teacher/:id',authMiddleware,updateTeacher);
-router.put('/student/:id',authMiddleware,updateStudent);
+router.get('/donations/pending', authMiddleware, getPendingDonations);
+router.post('/donation/assign', authMiddleware, assignDonation);  // Change from '/donations/assign' to '/donation/assign'
+router.post('/donation/reject', authMiddleware, rejectDonation);
+router.put('/parent/:id', authMiddleware, updateParent);
+router.put('/teacher/:id', authMiddleware, updateTeacher);
+router.put('/student/:id', authMiddleware, updateStudent);
 router.post('/search/parents', authMiddleware, searchParents);
 router.post('/search/teachers', authMiddleware, searchTeachers); 
 router.post('/search/students', authMiddleware, searchStudents); 

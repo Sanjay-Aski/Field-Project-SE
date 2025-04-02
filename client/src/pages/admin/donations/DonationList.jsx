@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { FaGift, FaCheck, FaTimes } from 'react-icons/fa';
 import DataTable from '../../../components/ui/DataTable';
 import { toast } from 'react-toastify';
@@ -9,73 +8,73 @@ const DonationList = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        // In a real app, you would fetch actual data from your API
-        // For now, let's create mock data
-        setTimeout(() => {
-          const statuses = ['available', 'claimed', 'pending'];
-          const items = ['Books', 'Uniform', 'Stationery', 'Sports Equipment', 'Computer', 'Musical Instrument'];
-          
-          const mockDonations = Array.from({ length: 20 }, (_, index) => ({
-            _id: `d${index + 1}`,
-            item: items[Math.floor(Math.random() * items.length)],
-            quantity: Math.floor(Math.random() * 10) + 1,
-            description: `Description for donation ${index + 1}`,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            donationDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-            donorId: {
-              _id: `p${Math.floor(Math.random() * 10) + 1}`,
-              fullName: `Parent ${Math.floor(Math.random() * 10) + 1}`
-            },
-            interestedUsers: Array.from({ length: Math.floor(Math.random() * 3) }, (_, i) => ({
-              userId: {
-                _id: `p${Math.floor(Math.random() * 10) + 20}`,
-                fullName: `Parent ${Math.floor(Math.random() * 10) + 20}`
-              },
-              requestDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-              status: ['pending', 'approved', 'rejected'][Math.floor(Math.random() * 3)]
-            }))
-          }));
-          
-          setDonations(mockDonations);
-          setLoading(false);
-        }, 1000);
-        
-        // Uncomment below for actual API call
-        /*
-        const response = await axios.get('/api/admin/donations', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        setDonations(response.data);
-        setLoading(false);
-        */
-      } catch (error) {
-        console.error('Error fetching donations:', error);
-        toast.error('Failed to load donations data');
-        setLoading(false);
-      }
-    };
-    
     fetchDonations();
   }, []);
   
+  const fetchDonations = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:5000/admin/donations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        setDonations(data.donations || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch donations');
+      }
+    } catch (error) {
+      console.error('Error fetching donations:', error);
+      toast.error('Failed to load donations data');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleApproveRequest = async (donationId, userId) => {
     try {
-      // In a real app, you would make an API call to approve the request
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:5000/admin/donation/assign', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          donationId, 
+          userId,
+          quantity: 1 // Default to 1, can be adjusted if needed
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+      
+      // Update the UI optimistically
       const updatedDonations = donations.map(donation => {
         if (donation._id === donationId) {
           return {
             ...donation,
             interestedUsers: donation.interestedUsers.map(user => {
-              if (user.userId._id === userId) {
+              if (user.userId === userId) {
                 return { ...user, status: 'approved' };
               }
               return user;
             }),
-            status: 'claimed'
+            status: donation.quantity <= 1 ? 'claimed' : 'available',
+            quantity: donation.quantity - 1
           };
         }
         return donation;
@@ -84,34 +83,42 @@ const DonationList = () => {
       setDonations(updatedDonations);
       toast.success('Donation request approved successfully');
       
-      // Uncomment below for actual API call
-      /*
-      await axios.post('/api/admin/donations/assign', { 
-        donationId, 
-        userId,
-        quantity: 1 // Or the requested quantity
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      toast.success('Donation request approved successfully');
-      */
+      // Refresh the data to ensure UI is in sync
+      fetchDonations();
     } catch (error) {
       console.error('Error approving donation request:', error);
-      toast.error('Failed to approve donation request');
+      toast.error(`Failed to approve request: ${error.message}`);
     }
   };
   
   const handleRejectRequest = async (donationId, userId) => {
     try {
-      // In a real app, you would make an API call to reject the request
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:5000/admin/donation/reject', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          donationId, 
+          userId
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+      
+      // Update the UI optimistically
       const updatedDonations = donations.map(donation => {
         if (donation._id === donationId) {
           return {
             ...donation,
             interestedUsers: donation.interestedUsers.map(user => {
-              if (user.userId._id === userId) {
+              if (user.userId === userId) {
                 return { ...user, status: 'rejected' };
               }
               return user;
@@ -124,21 +131,11 @@ const DonationList = () => {
       setDonations(updatedDonations);
       toast.success('Donation request rejected');
       
-      // Uncomment below for actual API call
-      /*
-      await axios.post('/api/admin/donations/reject', { 
-        donationId, 
-        userId
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      toast.success('Donation request rejected');
-      */
+      // Refresh the data to ensure UI is in sync
+      fetchDonations();
     } catch (error) {
       console.error('Error rejecting donation request:', error);
-      toast.error('Failed to reject donation request');
+      toast.error(`Failed to reject request: ${error.message}`);
     }
   };
   
@@ -167,7 +164,7 @@ const DonationList = () => {
     { 
       key: 'donor', 
       label: 'Donor',
-      render: (donation) => donation.donorId.fullName
+      render: (donation) => donation.donorName
     },
     { 
       key: 'requests', 
@@ -175,23 +172,23 @@ const DonationList = () => {
       sortable: false,
       render: (donation) => (
         <div>
-          {donation.interestedUsers.length > 0 ? (
+          {donation.interestedUsers && donation.interestedUsers.length > 0 ? (
             <div className="space-y-2">
               {donation.interestedUsers.map((user, index) => (
                 <div key={index} className="text-sm border-b pb-1 last:border-0 last:pb-0">
                   <div className="flex justify-between">
-                    <span>{user.userId.fullName}</span>
+                    <span>{user.userName}</span>
                     {user.status === 'pending' && (
                       <div className="flex space-x-1">
                         <button 
-                          onClick={() => handleApproveRequest(donation._id, user.userId._id)}
+                          onClick={() => handleApproveRequest(donation._id, user.userId)}
                           className="text-green-600 hover:text-green-800"
                           title="Approve"
                         >
                           <FaCheck size={16} />
                         </button>
                         <button 
-                          onClick={() => handleRejectRequest(donation._id, user.userId._id)}
+                          onClick={() => handleRejectRequest(donation._id, user.userId)}
                           className="text-red-600 hover:text-red-800"
                           title="Reject"
                         >
@@ -257,7 +254,7 @@ const DonationList = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold text-yellow-600 mb-2">Pending</h3>
           <p className="text-3xl font-bold">
-            {donations.filter(d => d.status === 'pending').length}
+            {donations.filter(d => d.interestedUsers?.some(user => user.status === 'pending')).length}
           </p>
           <p className="text-sm text-gray-500 mt-1">Donations with pending requests</p>
         </div>

@@ -7,7 +7,7 @@ const ParentLayout = () => {
   return (
     <div className="min-h-screen bg-sand flex flex-col">
       {/* Top Navigation */}
-      <ParentNavbar />
+      <ParentNavbar donationsLink="/donations" />
       
       {/* Main Content */}
       <div className="flex-grow p-6 md:p-8 overflow-auto">

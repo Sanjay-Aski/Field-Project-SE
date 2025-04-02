@@ -37,6 +37,7 @@ import MarksheetView from './pages/parent/marksheet/MarksheetView'; // Updated p
 import MarksheetPage from './pages/teacher/marksheet/MarksheetPage';
 import MarksheetDetail from './pages/teacher/marksheet/MarksheetDetail';
 import StudentMarksheet from './pages/parent/marksheet/StudentMarksheet'; // Import StudentMarksheet
+import ParentDonations from './pages/parent/donations/ParentDonations'; // Import ParentDonations
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -143,6 +144,7 @@ function App() {
             <Route path="forms/pending" element={<div className="p-4">Pending Forms Page</div>} />
             <Route path="teachers" element={<div className="p-4">Teachers Page</div>} />
             <Route path="marksheet/:studentId" element={<StudentMarksheet />} /> {/* Updated route */}
+            <Route path="donations" element={<ParentDonations />} /> {/* Add this new route */}
             <Route path="support/complaint" element={<ComplaintForm />} />
             <Route index element={<Navigate to="/parent/dashboard" replace />} />
           </Route>

@@ -80,7 +80,7 @@ const AdminLayout = () => {
             <li>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center py-3 px-6 text-red-400 hover:bg-secondary-700 transition-colors"
+                className="w-full flex items-center py-3 px-6  text-red-600 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <span className="mr-3"><FaSignOutAlt /></span>
                 Logout

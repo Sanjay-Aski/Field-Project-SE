@@ -17,7 +17,9 @@ import {
     getNotes,
     createDonation,
     getPendingDonations,
+    getMyDonationRequests,
     applyForDonation,
+    checkDonationRequest,
     getParentProfile,
     submitComplaint,
     getUnreadMessageCount,
@@ -46,7 +48,9 @@ router.get('/forms/not-filled', parentAuthMiddleware, getAllFormsNotFilled);
 router.get('/notes', parentAuthMiddleware, getNotes);
 router.post('/donation', parentAuthMiddleware, createDonation);
 router.get('/donations/pending', parentAuthMiddleware, getPendingDonations);
+router.get('/donations/my-requests', parentAuthMiddleware, getMyDonationRequests);
 router.post('/donation/:donationId/apply', parentAuthMiddleware, applyForDonation);
+router.get('/donation/:donationId/check', parentAuthMiddleware, checkDonationRequest);
 router.get('/profile', parentAuthMiddleware, getParentProfile);
 router.post('/support/complaint', parentAuthMiddleware, submitComplaint);
 

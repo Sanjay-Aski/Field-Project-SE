@@ -812,6 +812,80 @@ const applyForDonation = async (req, res) => {
     }
 };
 
+const checkDonationRequest = async (req, res) => {
+    try {
+        const { donationId } = req.params;
+        const parent = req.parent;
+
+        const donation = await Donation.findById(donationId);
+        if (!donation) {
+            return res.status(404).json({ error: 'Donation not found' });
+        }
+
+        const alreadyRequested = donation.interestedUsers.some(
+            user => user.userId.toString() === parent._id.toString()
+        );
+
+        res.status(200).json({
+            success: true,
+            alreadyRequested
+        });
+    } catch (error) {
+        console.error('Error checking donation request status:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error checking donation request status' 
+        });
+    }
+};
+
+const getMyDonationRequests = async (req, res) => {
+    try {
+        const parentId = req.parent._id;
+        
+        // Find donations with this parent in interestedUsers
+        const donations = await Donation.find({
+            'interestedUsers.userId': parentId
+        }).populate('donorId', 'fullName');
+        
+        if (!donations || donations.length === 0) {
+            return res.status(200).json({
+                success: true,
+                requests: []
+            });
+        }
+        
+        // Format the response data
+        const requests = donations.map(donation => {
+            const request = donation.interestedUsers.find(
+                user => user.userId.toString() === parentId.toString()
+            );
+            
+            return {
+                _id: donation._id,
+                item: donation.item,
+                category: donation.item,  // Using item as category (Books, Uniforms, etc)
+                description: donation.description,
+                donorName: donation.donorId.fullName,
+                isAdminDonation: donation.donorId.role === 'admin',
+                status: request.status,
+                requestDate: request.requestDate
+            };
+        });
+        
+        res.status(200).json({
+            success: true,
+            requests
+        });
+    } catch (error) {
+        console.error('Error fetching donation requests:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error fetching donation requests' 
+        });
+    }
+};
+
 const getParentProfile = async (req, res) => {
     try {
         const parentId = req.parent._id;
@@ -986,6 +1060,8 @@ export {
     createDonation,
     getPendingDonations,
     applyForDonation,
+    checkDonationRequest,
+    getMyDonationRequests,
     getAllFormsNotFilled,
     getNotes,
     getParentProfile,

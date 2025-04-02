@@ -27,13 +27,10 @@ const TeacherLayout = () => {
   
   const navItems = [
     { path: '/teacher/dashboard', icon: <FaUserTie />, label: 'Dashboard' },
-    { path: '/teacher/classes', icon: <FaChalkboardTeacher />, label: 'My Classes' },
     { path: '/teacher/attendance', icon: <FaCalendarAlt />, label: 'Attendance' },
     { path: '/teacher/marksheets', icon: <FaBook />, label: 'Marksheets' },
     { path: '/teacher/forms', icon: <FaClipboardList />, label: 'Forms' },
     { path: '/teacher/chat', icon: <FaUsers />, label: 'Parent Chat' },
-    { path: '/teacher/analytics', icon: <FaChartBar />, label: 'Analytics' },
-    // { path: '/teacher/support/complaint', icon: <FaExclamationCircle />, label: 'Raise Complaint' }
   ];
   
   return (
@@ -77,7 +74,7 @@ const TeacherLayout = () => {
           
           <button
             onClick={handleLogout}
-            className="flex items-center text-white hover:text-primary-200 transition-colors"
+            className="flex items-center  text-red-600 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <FaSignOutAlt className="mr-1" />
             Logout
@@ -112,7 +109,7 @@ const TeacherLayout = () => {
             <li>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center py-3 px-6 text-yellow-900 bg-orange-400  hover:bg-yellow-700 transition-colors"
+              className="w-full flex items-center py-3 px-6  text-red-600 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <span className="mr-3"><FaSignOutAlt /></span>
               Logout

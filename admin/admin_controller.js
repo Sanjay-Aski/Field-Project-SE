@@ -137,7 +137,7 @@ const removeStudent = async (req, res) => {
         const student = await Student.findByIdAndDelete(req.params.id);
         if (!student) return res.status(404).json({ error: 'Student not found' });
 
-        res.json(SUCESSFULLY_REMOVED);
+        res.json('SUCESSFULLY_REMOVED');
     } catch (error) {
         res.status(500).json({ error: 'Error removing Student' });
     }
@@ -241,6 +241,37 @@ const assignDonation = async (req, res) => {
     } catch (error) {
         console.error('Error assigning donation:', error);
         res.status(500).json({ error: 'Error assigning donation' });
+    }
+};
+
+const rejectDonation = async (req, res) => {
+    try {
+        const { donationId, userId } = req.body;
+
+        const donation = await Donation.findById(donationId);
+        if (!donation) {
+            return res.status(404).json({ error: 'Donation not found' });
+        }
+
+        // Find the interested user
+        const interestedUser = donation.interestedUsers.find(
+            user => user.userId.toString() === userId && user.status === 'pending'
+        );
+
+        if (!interestedUser) {
+            return res.status(404).json({ error: 'User not found or request not pending' });
+        }
+
+        // Update the interested user's status
+        interestedUser.status = 'rejected';
+        await donation.save();
+
+        res.status(200).json({
+            message: 'Donation request rejected successfully'
+        });
+    } catch (error) {
+        console.error('Error rejecting donation request:', error);
+        res.status(500).json({ error: 'Error rejecting donation request' });
     }
 };
 
@@ -621,6 +652,7 @@ export {
     getAllDonations,
     getPendingDonations,
     assignDonation,
+    rejectDonation,
     updateParent,
     updateTeacher,
     updateStudent,

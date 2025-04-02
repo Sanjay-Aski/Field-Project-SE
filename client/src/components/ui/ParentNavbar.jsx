@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { 
   FaUserTie, FaChild, FaUsers, FaCalendarAlt, FaClipboardList, 
-  FaEnvelope, FaSignOutAlt, FaBars, FaTimes, FaUserCircle, FaExclamationCircle 
+  FaEnvelope, FaSignOutAlt, FaBars, FaTimes, FaUserCircle, FaExclamationCircle, FaGift 
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -22,11 +22,12 @@ const ParentNavbar = () => {
   
   const navItems = [
     { path: '/parent/dashboard', icon: <FaUserTie />, label: 'Dashboard' },
-    { path: '/parent/children', icon: <FaChild />, label: 'My Children' },
-    { path: '/parent/chat', icon: <FaEnvelope />, label: 'Messages' },
+    // { path: '/parent/children', icon: <FaChild />, label: 'My Children' },
+    // { path: '/parent/chat', icon: <FaEnvelope />, label: 'Messages' },
     { path: '/parent/forms/pending', icon: <FaClipboardList />, label: 'Forms' },
-    { path: '/parent/teachers', icon: <FaUsers />, label: 'Teachers' },
+    // { path: '/parent/teachers', icon: <FaUsers />, label: 'Teachers' },
     { path: '/parent/profile', icon: <FaUserCircle />, label: 'Profile' },
+    { path: '/parent/donations', icon: <FaGift />, label: 'Donations' },
     // { path: '/parent/support/complaint', icon: <FaExclamationCircle />, label: 'Raise Complaint' }
   ];
   
@@ -67,7 +68,7 @@ const ParentNavbar = () => {
           ))}
           <button
             onClick={handleLogout}
-            className="flex items-center text-white hover:text-red-300 transition-colors"
+            className="flex items-center  text-red-600 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <FaSignOutAlt className="mr-2" />
             Logout
@@ -98,7 +99,7 @@ const ParentNavbar = () => {
             <li>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center py-3 px-6 text-red-500 hover:bg-gray-100 transition-colors"
+                className="w-full flex items-center py-3 px-6  text-red-600 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <span className="mr-3"><FaSignOutAlt /></span>
                 Logout
