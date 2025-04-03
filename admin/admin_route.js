@@ -12,6 +12,7 @@ import {
     getPendingDonations,
     assignDonation,
     rejectDonation,
+    fixDonationStatuses, // Add this new import
     updateParent,
     updateTeacher,
     updateStudent,
@@ -27,7 +28,8 @@ import {
     getAllComplaints,
     getComplaintById,
     respondToComplaint,
-    updateComplaintStatus
+    updateComplaintStatus,
+    getDashboardStats
 } from '../admin/admin_controller.js';
 
 import authMiddleware from './admin_middleware.js';
@@ -46,6 +48,7 @@ router.get('/donations', authMiddleware, getAllDonations);
 router.get('/donations/pending', authMiddleware, getPendingDonations);
 router.post('/donation/assign', authMiddleware, assignDonation);  // Change from '/donations/assign' to '/donation/assign'
 router.post('/donation/reject', authMiddleware, rejectDonation);
+router.post('/donations/fix-statuses', authMiddleware, fixDonationStatuses); // Add this new route
 router.put('/parent/:id', authMiddleware, updateParent);
 router.put('/teacher/:id', authMiddleware, updateTeacher);
 router.put('/student/:id', authMiddleware, updateStudent);
@@ -70,5 +73,8 @@ router.get('/complaints', authMiddleware, getAllComplaints);
 router.get('/complaints/:complaintId', authMiddleware, getComplaintById);
 router.post('/complaints/:complaintId/respond', authMiddleware, respondToComplaint);
 router.post('/complaints/:complaintId/update-status', authMiddleware, updateComplaintStatus);
+
+// Add dashboard stats route
+router.get('/stats', authMiddleware, getDashboardStats);
 
 export default router;

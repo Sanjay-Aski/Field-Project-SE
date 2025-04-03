@@ -200,78 +200,122 @@ const getPendingDonations = async (req, res) => {
 
 const assignDonation = async (req, res) => {
     try {
-        const { donationId, userId, quantity } = req.body;
+        const { donationId, userId, quantity = 1 } = req.body;
+        
+        console.log(`Assignment request received - donationId: ${donationId}, userId: ${userId}, quantity: ${quantity}`);
 
         const donation = await Donation.findById(donationId);
         if (!donation) {
+            console.log(`Donation not found: ${donationId}`);
             return res.status(404).json({ error: 'Donation not found' });
         }
 
-        if (donation.status !== 'available') {
-            return res.status(400).json({ error: 'This donation is not available' });
+        console.log(`Donation status: ${donation.status}, Available quantity: ${donation.quantity}`);
+        
+        // Modified condition to also accept 'pending' status
+        // Most likely the donation status should be 'available', but this will handle 'pending' as well
+        if (donation.status !== 'available' && donation.status !== 'pending') {
+            console.log(`Donation not available - status: ${donation.status}`);
+            return res.status(400).json({ error: `This donation is not available (status: ${donation.status})` });
         }
 
         if (quantity > donation.quantity) {
+            console.log(`Requested quantity ${quantity} exceeds available quantity ${donation.quantity}`);
             return res.status(400).json({ error: 'Requested quantity exceeds available quantity' });
         }
 
-        // Find the interested user
+        // Log all interested users for debugging
+        console.log(`Interested users: ${JSON.stringify(donation.interestedUsers.map(u => ({ 
+            id: u.userId.toString(),
+            status: u.status 
+        })))}`);
+        
+        // Find the interested user with proper string comparison
         const interestedUser = donation.interestedUsers.find(
-            user => user.userId.toString() === userId && user.status === 'pending'
+            user => user.userId.toString() === userId.toString() && user.status === 'pending'
         );
 
         if (!interestedUser) {
+            console.log(`No pending request found for user ${userId}`);
             return res.status(404).json({ error: 'User not found or request not pending' });
         }
 
         // Update the interested user's status and quantity
         interestedUser.status = 'approved';
-        donation.quantity -= quantity;
+        donation.quantity -= Number(quantity);
 
-        if (donation.quantity === 0) {
+        // Set status to 'available' if it was 'pending' and now set to 'claimed' if quantity is 0
+        if (donation.status === 'pending') {
+            donation.status = 'available';
+        }
+        
+        if (donation.quantity <= 0) {
             donation.status = 'claimed';
         }
 
         await donation.save();
+        console.log('Donation assigned successfully');
 
+        // Send a properly formatted response with success flag
         res.status(200).json({
+            success: true,
             message: 'Donation assigned successfully'
-
         });
     } catch (error) {
         console.error('Error assigning donation:', error);
-        res.status(500).json({ error: 'Error assigning donation' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Error assigning donation',
+            message: error.message 
+        });
     }
 };
 
 const rejectDonation = async (req, res) => {
     try {
         const { donationId, userId } = req.body;
+        
+        console.log(`Rejection request received - donationId: ${donationId}, userId: ${userId}`);
 
         const donation = await Donation.findById(donationId);
         if (!donation) {
+            console.log(`Donation not found: ${donationId}`);
             return res.status(404).json({ error: 'Donation not found' });
         }
 
-        // Find the interested user
+        // Log all interested users for debugging
+        console.log(`Interested users: ${JSON.stringify(donation.interestedUsers.map(u => ({ 
+            id: u.userId.toString(),
+            status: u.status 
+        })))}`);
+
+        // Find the interested user with proper string comparison
         const interestedUser = donation.interestedUsers.find(
-            user => user.userId.toString() === userId && user.status === 'pending'
+            user => user.userId.toString() === userId.toString() && user.status === 'pending'
         );
 
         if (!interestedUser) {
+            console.log(`No pending request found for user ${userId}`);
             return res.status(404).json({ error: 'User not found or request not pending' });
         }
 
         // Update the interested user's status
         interestedUser.status = 'rejected';
         await donation.save();
+        console.log('Donation request rejected successfully');
 
+        // Send a properly formatted response with success flag
         res.status(200).json({
+            success: true,
             message: 'Donation request rejected successfully'
         });
     } catch (error) {
         console.error('Error rejecting donation request:', error);
-        res.status(500).json({ error: 'Error rejecting donation request' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Error rejecting donation request',
+            message: error.message
+        });
     }
 };
 
@@ -640,6 +684,65 @@ const updateComplaintStatus = async (req, res) => {
     }
 };
 
+const getDashboardStats = async (req, res) => {
+    try {
+        // Get counts from all collections in parallel
+        const [teacherCount, parentCount, studentCount, donationCount] = await Promise.all([
+            Teacher.countDocuments({}),
+            Parent.countDocuments({}),
+            Student.countDocuments({}),
+            Donation.countDocuments({})
+        ]);
+
+        res.status(200).json({
+            success: true,
+            teacherCount,
+            parentCount,
+            studentCount,
+            donationCount
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error fetching dashboard statistics' 
+        });
+    }
+};
+
+const fixDonationStatuses = async (req, res) => {
+    try {
+        // Find all donations with 'pending' status that should be 'available'
+        const pendingDonations = await Donation.find({ 
+            status: 'pending',
+            interestedUsers: { $exists: true, $not: { $size: 0 } }
+        });
+        
+        console.log(`Found ${pendingDonations.length} pending donations that might need fixing`);
+        
+        let updatedCount = 0;
+        
+        // Update the status to 'available' for all found donations
+        for (const donation of pendingDonations) {
+            donation.status = 'available';
+            await donation.save();
+            updatedCount++;
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: `Updated ${updatedCount} donations from 'pending' to 'available' status`
+        });
+    } catch (error) {
+        console.error('Error fixing donation statuses:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Error fixing donation statuses',
+            message: error.message
+        });
+    }
+};
+
 export {
     registerAdmin,
     loginAdmin,
@@ -668,5 +771,7 @@ export {
     getAllComplaints,
     getComplaintById,
     respondToComplaint,
-    updateComplaintStatus
+    updateComplaintStatus,
+    getDashboardStats,
+    fixDonationStatuses
 };

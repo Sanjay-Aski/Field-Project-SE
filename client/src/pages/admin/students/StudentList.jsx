@@ -13,7 +13,7 @@ const StudentList = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/admin/student', {
+        const response = await fetch('http://192.168.35.107:5000/admin/student', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ const StudentList = () => {
           // Fetch parent information if parentId exists
           if (student.parentId) {
             try {
-              const parentResponse = await fetch(`http://localhost:5000/admin/parent/${student.parentId}`, {
+              const parentResponse = await fetch(`http://192.168.35.107:5000/admin/parent/${student.parentId}`, {
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'

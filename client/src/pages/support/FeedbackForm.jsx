@@ -71,7 +71,7 @@ const FeedbackForm = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
      
-      const response = await fetch('http://localhost:5000/support/feedback', {
+      const response = await fetch('http://192.168.35.107:5000/support/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

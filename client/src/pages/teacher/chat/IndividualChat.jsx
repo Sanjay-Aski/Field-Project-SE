@@ -18,7 +18,7 @@ const IndividualChat = () => {
         const token = localStorage.getItem('token');
 
         // Fetch unread counts and update contacts
-        const response = await fetch('http://localhost:5000/teacher/chat/unread-counts', {
+        const response = await fetch('http://192.168.35.107:5000/teacher/chat/unread-counts', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

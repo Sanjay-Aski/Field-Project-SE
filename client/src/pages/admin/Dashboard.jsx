@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { FaChalkboardTeacher, FaUsers, FaUserGraduate, FaGift } from 'react-icons/fa';
 
 const AdminDashboard = () => {
@@ -15,32 +14,30 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // In a real app, you would fetch actual stats from your API
-        // For now, we'll simulate with setTimeout
-        setTimeout(() => {
-          setStats({
-            teacherCount: 45,
-            parentCount: 320,
-            studentCount: 450,
-            donationCount: 28,
-            loading: false,
-            error: null
-          });
-        }, 1000);
+        const token = localStorage.getItem('token');
         
-        // Uncomment below for actual API call
-        /*
-        const response = await axios.get('/api/admin/stats', {
+        const response = await fetch('http://192.168.35.107:5000/admin/stats', {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
+
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+
+        const data = await response.json();
+        
         setStats({
-          ...response.data,
+          teacherCount: data.teacherCount || 0,
+          parentCount: data.parentCount || 0,
+          studentCount: data.studentCount || 0,
+          donationCount: data.donationCount || 0,
           loading: false,
           error: null
         });
-        */
       } catch (error) {
         console.error('Error fetching stats:', error);
         setStats(prev => ({

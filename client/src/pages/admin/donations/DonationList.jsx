@@ -16,7 +16,7 @@ const DonationList = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/admin/donations', {
+      const response = await fetch('http://192.168.35.107:5000/admin/donations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -42,9 +42,10 @@ const DonationList = () => {
   
   const handleApproveRequest = async (donationId, userId) => {
     try {
+      console.log(`Approving donation ${donationId} for user ${userId}`);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/admin/donation/assign', {
+      const response = await fetch('http://192.168.35.107:5000/admin/donation/assign', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -53,49 +54,88 @@ const DonationList = () => {
         body: JSON.stringify({ 
           donationId, 
           userId,
-          quantity: 1 // Default to 1, can be adjusted if needed
+          quantity: 1
         })
       });
       
+      const data = await response.json();
+      console.log('Response from server:', data);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        // If the error is about donation status, offer to fix it
+        if (data.error && data.error.includes('donation is not available')) {
+          const shouldFix = window.confirm(
+            'The donation status appears to be incorrect. Would you like to fix it automatically?'
+          );
+          
+          if (shouldFix) {
+            await fixAndRetry(donationId, userId);
+            return;
+          }
+        }
+        
+        throw new Error(data.error || `Request failed with status ${response.status}`);
       }
       
-      // Update the UI optimistically
-      const updatedDonations = donations.map(donation => {
-        if (donation._id === donationId) {
-          return {
-            ...donation,
-            interestedUsers: donation.interestedUsers.map(user => {
-              if (user.userId === userId) {
-                return { ...user, status: 'approved' };
-              }
-              return user;
-            }),
-            status: donation.quantity <= 1 ? 'claimed' : 'available',
-            quantity: donation.quantity - 1
-          };
-        }
-        return donation;
-      });
-      
-      setDonations(updatedDonations);
       toast.success('Donation request approved successfully');
-      
-      // Refresh the data to ensure UI is in sync
       fetchDonations();
     } catch (error) {
       console.error('Error approving donation request:', error);
       toast.error(`Failed to approve request: ${error.message}`);
     }
   };
-  
-  const handleRejectRequest = async (donationId, userId) => {
+
+  const fixAndRetry = async (donationId, userId) => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/admin/donation/reject', {
+      // First try to fix all donation statuses
+      await fetch('http://192.168.35.107:5000/admin/donations/fix-statuses', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      toast.info('Trying to fix donation status...');
+      
+      // Wait a moment for the fix to complete
+      setTimeout(async () => {
+        // Then retry the approval
+        const response = await fetch('http://192.168.35.107:5000/admin/donation/assign', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            donationId, 
+            userId,
+            quantity: 1
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Request still failed with status ${response.status}`);
+        }
+        
+        toast.success('Donation request approved successfully');
+        fetchDonations();
+      }, 1000);
+    } catch (error) {
+      console.error('Error fixing and retrying:', error);
+      toast.error(`Could not fix the issue: ${error.message}`);
+    }
+  };
+  
+  const handleRejectRequest = async (donationId, userId) => {
+    try {
+      console.log(`Rejecting donation ${donationId} for user ${userId}`);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://192.168.35.107:5000/admin/donation/reject', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -107,10 +147,14 @@ const DonationList = () => {
         })
       });
       
+      const data = await response.json();
+      console.log('Response from server:', data);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        throw new Error(data.error || `Request failed with status ${response.status}`);
       }
+      
+      toast.success('Donation request rejected successfully');
       
       // Update the UI optimistically
       const updatedDonations = donations.map(donation => {
@@ -129,10 +173,11 @@ const DonationList = () => {
       });
       
       setDonations(updatedDonations);
-      toast.success('Donation request rejected');
       
-      // Refresh the data to ensure UI is in sync
-      fetchDonations();
+      // Fetch latest data after a short delay
+      setTimeout(() => {
+        fetchDonations();
+      }, 500);
     } catch (error) {
       console.error('Error rejecting donation request:', error);
       toast.error(`Failed to reject request: ${error.message}`);

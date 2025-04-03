@@ -16,7 +16,7 @@ const TeacherDashboard = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         
-        const response = await fetch('http://localhost:5000/teacher/profile', {
+        const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

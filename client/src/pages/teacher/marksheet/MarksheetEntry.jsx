@@ -62,7 +62,7 @@ const MarksheetEntry = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://localhost:5000/teacher/profile', {
+      const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -150,7 +150,7 @@ const MarksheetEntry = () => {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `http://localhost:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`,
+        `http://192.168.35.107:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -294,7 +294,7 @@ const MarksheetEntry = () => {
       );
 
       const response = await fetch(
-        'http://localhost:5000/teacher/assign-marksheet',
+        'http://192.168.35.107:5000/teacher/assign-marksheet',
         {
           method: 'POST',
           headers: {
@@ -327,7 +327,7 @@ const MarksheetEntry = () => {
 
       const token = localStorage.getItem('token');
       const response = await fetch(
-        'http://localhost:5000/teacher/assign-marksheet-excel',
+        'http://192.168.35.107:5000/teacher/assign-marksheet-excel',
         {
           method: 'POST',
           headers: {

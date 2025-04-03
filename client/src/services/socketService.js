@@ -17,7 +17,7 @@ export const initiateSocket = () => {
   }
   
   // Connect to the server with authentication
-  socket = io('http://localhost:5000', {
+  socket = io('http://192.168.35.107:5000', {
     auth: {
       token: token
     },

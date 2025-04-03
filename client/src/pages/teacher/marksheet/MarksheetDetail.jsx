@@ -24,7 +24,7 @@ const MarksheetDetail = () => {
       // First get student details - Using a proper URL structure
       // The request was failing because class and division params were empty strings
       // Change to use just the studentId parameter
-      const studentResponse = await fetch(`http://localhost:5000/teacher/class-students?class=&division=&studentId=${studentId}`, {
+      const studentResponse = await fetch(`http://192.168.35.107:5000/teacher/class-students?class=&division=&studentId=${studentId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -44,7 +44,7 @@ const MarksheetDetail = () => {
       setStudent(studentData[0]);
 
       // Then get marksheets
-      const marksheetResponse = await fetch(`http://localhost:5000/teacher/marksheets?studentId=${studentId}`, {
+      const marksheetResponse = await fetch(`http://192.168.35.107:5000/teacher/marksheets?studentId=${studentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

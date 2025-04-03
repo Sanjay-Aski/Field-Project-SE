@@ -40,7 +40,7 @@ const ComplaintList = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://localhost:5000/admin/complaints', {
+      const response = await fetch('http://192.168.35.107:5000/admin/complaints', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ const ComplaintList = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://localhost:5000/admin/complaints/${selectedComplaint._id}/respond`, {
+      const response = await fetch(`http://192.168.35.107:5000/admin/complaints/${selectedComplaint._id}/respond`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -116,7 +116,7 @@ const ComplaintList = () => {
       setUpdating(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://localhost:5000/admin/complaints/${selectedComplaint._id}/update-status`, {
+      const response = await fetch(`http://192.168.35.107:5000/admin/complaints/${selectedComplaint._id}/update-status`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -33,7 +33,7 @@ const MarksheetPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/teacher/profile', {
+      const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -89,7 +89,7 @@ const MarksheetPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      let url = `http://localhost:5000/teacher/class-marksheets?classNum=${selectedClass}&division=${selectedDivision}`;
+      let url = `http://192.168.35.107:5000/teacher/class-marksheets?classNum=${selectedClass}&division=${selectedDivision}`;
       
       if (selectedExamType) {
         url += `&examType=${encodeURIComponent(selectedExamType)}`;
@@ -146,7 +146,7 @@ const MarksheetPage = () => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch('http://localhost:5000/teacher/assign-marksheet-excel', {
+      const response = await fetch('http://192.168.35.107:5000/teacher/assign-marksheet-excel', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

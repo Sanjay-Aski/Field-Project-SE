@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5000', // Replace with your backend URL if different
+  baseURL: 'http://192.168.35.107:5000', // Replace with your backend URL if different
   headers: {
     'Content-Type': 'application/json',
   },
@@ -143,9 +143,20 @@ export const fetchPendingDonations = async () => {
 
 export const assignDonation = async (donationData) => {
   try {
-    const response = await api.post('/api/admin/donations/assign', donationData);
+    const response = await api.post('/admin/donation/assign', donationData);
     return response.data;
   } catch (error) {
+    console.error('Error assigning donation:', error);
+    throw error;
+  }
+};
+
+export const rejectDonation = async (donationData) => {
+  try {
+    const response = await api.post('/admin/donation/reject', donationData);
+    return response.data;
+  } catch (error) {
+    console.error('Error rejecting donation:', error);
     throw error;
   }
 };

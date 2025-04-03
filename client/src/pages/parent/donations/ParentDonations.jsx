@@ -20,7 +20,7 @@ const ParentDonations = () => {
       const token = localStorage.getItem('token');
       
       if (activeTab === 'available') {
-        const response = await fetch('http://localhost:5000/parent/donations/pending', {
+        const response = await fetch('http://192.168.35.107:5000/parent/donations/pending', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -38,7 +38,7 @@ const ParentDonations = () => {
         
         const enhancedDonations = await Promise.all(data.donations.map(async (donation) => {
           try {
-            const checkResponse = await fetch(`http://localhost:5000/parent/donation/${donation._id}/check`, {
+            const checkResponse = await fetch(`http://192.168.35.107:5000/parent/donation/${donation._id}/check`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
@@ -67,7 +67,7 @@ const ParentDonations = () => {
         
         setAvailableDonations(enhancedDonations || []);
       } else if (activeTab === 'requests') {
-        const response = await fetch('http://localhost:5000/parent/donations/my-requests', {
+        const response = await fetch('http://192.168.35.107:5000/parent/donations/my-requests', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -98,7 +98,7 @@ const ParentDonations = () => {
       setRequestLoading(prev => ({ ...prev, [donationId]: true }));
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://localhost:5000/parent/donation/${donationId}/apply`, {
+      const response = await fetch(`http://192.168.35.107:5000/parent/donation/${donationId}/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -362,7 +362,7 @@ const DonationForm = ({ onClose, onDonationAdded }) => {
       setSubmitting(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://localhost:5000/parent/donation', {
+      const response = await fetch('http://192.168.35.107:5000/parent/donation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
