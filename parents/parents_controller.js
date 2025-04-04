@@ -118,6 +118,74 @@ const getForms = async (req, res) => {
     }
 };
 
+const getFormById = async (req, res) => {
+    try {
+        const { studentId, formId } = req.params;
+        const parentId = req.parent._id;
+
+        // Check if the student exists and belongs to this parent
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: 'Student not found'
+            });
+        }
+
+        if (!req.parent.children.includes(studentId)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to view this student\'s forms'
+            });
+        }
+
+        // Find the specific form by ID
+        const form = await DynamicForm.findById(formId).lean();
+        
+        if (!form) {
+            return res.status(404).json({
+                success: false,
+                message: 'Form not found'
+            });
+        }
+
+        // Check if this form is assigned to this student (either directly or via class)
+        const isAssignedToStudent = 
+            (form.assignedTo === 'specific' && form.studentIds.some(id => id.toString() === studentId)) ||
+            (form.assignedTo === 'class' && 
+             form.class && 
+             form.class.standard === student.class && 
+             form.class.division === student.division);
+        
+        if (!isAssignedToStudent) {
+            return res.status(403).json({
+                success: false,
+                message: 'This form is not assigned to this student'
+            });
+        }
+
+        // Return the form data
+        res.status(200).json({
+            success: true,
+            form: {
+                _id: form._id,
+                title: form.title,
+                description: form.description,
+                fields: form.fields,
+                createdAt: form.createdAt
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching form by ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching form details',
+            error: error.message
+        });
+    }
+};
+
 const getMarksheet = async (req, res) => {
     try {
         const { studentId } = req.params;
@@ -355,33 +423,66 @@ const fillForm = async (req, res) => {
             return res.status(403).json({ error: 'Access denied. This student is not your child.' });
         }
 
-        if (!form.studentIds.includes(studentId)) {
+        // Get student data to check class-based forms
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        // Check if form is assigned to this student (either directly or via class)
+        const isFormAssigned = 
+            (form.assignedTo === 'specific' && form.studentIds.some(id => id.toString() === studentId)) ||
+            (form.assignedTo === 'class' && 
+             form.class && 
+             form.class.standard === student.class && 
+             form.class.division === student.division);
+
+        if (!isFormAssigned) {
             return res.status(403).json({ error: 'This form is not assigned to your child.' });
         }
 
-        const isValidAnswers = form.fields.every(field => {
-            const answer = answers.find(a => a.field === field.label);
-            if (!answer) return false;
-
-            if (field.type === 'select' || field.type === 'radio') {
-                return field.options.includes(answer.value);
+        // Prepare the answers with proper data types based on field type
+        const processedAnswers = [];
+        
+        for (const answer of answers) {
+            // Find the corresponding field definition to get its type
+            const field = form.fields.find(f => f.label === answer.field);
+            
+            if (!field) {
+                return res.status(400).json({ error: `Field "${answer.field}" not found in the form` });
             }
-            return true;
-        });
-
-        if (!isValidAnswers) {
-            return res.status(400).json({ error: 'Invalid answers provided.' });
+            
+            // Process the value based on field type
+            let processedValue = answer.value;
+            
+            // For checkbox type, convert array to a string value
+            if (field.type === 'checkbox' && Array.isArray(processedValue)) {
+                processedValue = processedValue.join(', ');
+            }
+            
+            // Validate field value
+            if ((field.type === 'select' || field.type === 'radio') && 
+                !field.options.includes(processedValue)) {
+                return res.status(400).json({ error: `Invalid value for field "${answer.field}"` });
+            }
+            
+            processedAnswers.push({
+                field: answer.field,
+                value: processedValue
+            });
         }
-
+        
+        // Add the response to the form
         form.responses.push({
             parentId: parent._id,
             studentId: studentId,
-            answers: answers
+            answers: processedAnswers
         });
 
         await form.save();
 
         res.status(201).json({
+            success: true,
             message: 'Form filled successfully'
         });
 
@@ -1047,6 +1148,7 @@ export {
     getChildren,
     fillForm, 
     getForms, 
+    getFormById, // Add this new export
     getMarksheet,
     getMarksheetByExamType,
     getMarksheetExamTypes, 

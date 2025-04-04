@@ -38,6 +38,14 @@ import MarksheetPage from './pages/teacher/marksheet/MarksheetPage';
 import MarksheetDetail from './pages/teacher/marksheet/MarksheetDetail';
 import StudentMarksheet from './pages/parent/marksheet/StudentMarksheet'; // Import StudentMarksheet
 import ParentDonations from './pages/parent/donations/ParentDonations'; // Import ParentDonations
+import PendingForms from './pages/parent/forms/PendingForms';
+import CompletedForms from './pages/parent/forms/CompletedForms'; // Import CompletedForms
+import FormDetail from './pages/parent/forms/FormDetail';
+import FormsPage from './pages/teacher/forms/FormsPage';
+import FormBuilder from './pages/teacher/forms/FormBuilder';
+import FormView from './pages/teacher/forms/FormView';
+import FormAnalytics from './pages/teacher/forms/FormAnalytics';
+// import TeacherSettings from './pages/teacher/TeacherSettings';
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -118,13 +126,20 @@ function App() {
             <Route path="attendance" element={<AttendanceEntryPage />} />
             <Route path="marksheets" element={<MarksheetPage />} />
             <Route path="marksheets/:id" element={<MarksheetView />} />
-            <Route path="marksheet/create" element={<MarksheetEntry />} /> {/* Move this route before the dynamic route */}
+            <Route path="marksheet/create" element={<MarksheetEntry />} />
             <Route path="marksheet/:studentId" element={<MarksheetDetail />} />
-            <Route path="forms" element={<div className="p-4">Forms Management Page</div>} />
+            
+            {/* Forms Routes */}
+            <Route path="forms" element={<FormsPage />} />
+            <Route path="forms/create" element={<FormBuilder />} />
+            <Route path="forms/edit/:id" element={<FormBuilder />} />
+            <Route path="forms/view/:id" element={<FormView />} />
+            <Route path="forms/analytics/:id" element={<FormAnalytics />} />
+            
+            {/* Other routes */}
             <Route path="chat" element={<TeacherChatPage />} />
-            <Route path="analytics" element={<div className="p-4">Analytics Page</div>} />
-            <Route path="support/complaint" element={<ComplaintForm />} />
-            <Route index element={<Navigate to="/teacher/dashboard" replace />} />
+            {/* <Route path="settings" element={<TeacherSettings />} /> */}
+            <Route path="*" element={<NotFound />} />
           </Route>
           
           {/* Protected Parent Routes */}
@@ -141,10 +156,12 @@ function App() {
             <Route path="children" element={<div className="p-4">My Children Page</div>} />
             <Route path="attendance/:studentId" element={<StudentAttendance />} />
             <Route path="chat/:studentId?" element={<ParentChatPage />} />
-            <Route path="forms/pending" element={<div className="p-4">Pending Forms Page</div>} />
+            <Route path="forms/pending" element={<PendingForms />} />
+            <Route path="forms/completed" element={<CompletedForms />} />
+            <Route path="forms/:studentId/:formId" element={<FormDetail />} />
             <Route path="teachers" element={<div className="p-4">Teachers Page</div>} />
-            <Route path="marksheet/:studentId" element={<StudentMarksheet />} /> {/* Updated route */}
-            <Route path="donations" element={<ParentDonations />} /> {/* Add this new route */}
+            <Route path="marksheet/:studentId" element={<StudentMarksheet />} />
+            <Route path="donations" element={<ParentDonations />} />
             <Route path="support/complaint" element={<ComplaintForm />} />
             <Route index element={<Navigate to="/parent/dashboard" replace />} />
           </Route>

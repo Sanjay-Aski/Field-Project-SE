@@ -166,8 +166,12 @@ const ParentDashboard = () => {
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-lg text-secondary-800">Pending Forms</h3>
-              <Link to="/parent/forms/pending" className="text-primary-600 text-sm hover:underline">View All</Link>
+              <h3 className="font-semibold text-lg text-secondary-800">Forms</h3>
+              <div className="flex space-x-2">
+                <Link to="/parent/forms/pending" className="text-primary-600 text-sm hover:underline">Pending</Link>
+                <span className="text-gray-300">|</span>
+                <Link to="/parent/forms/completed" className="text-green-600 text-sm hover:underline">Completed</Link>
+              </div>
             </div>
             <div className="flex items-center mt-4">
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">

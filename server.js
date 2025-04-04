@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import adminRoutes from './admin/admin_route.js';
+import adminRoutes from './admin/admin_routes.js';
 import parerentroutes from './parents/parents_routes.js';
 import teacherRoutes from './teacher/teacher_routes.js';
 import userRoutes from './user.js';

@@ -4,6 +4,7 @@ import {
     login,
     getChildren,
     getForms,
+    getFormById,
     getMarksheet,
     getAttendanceReport,
     sendNoteToTeacher,
@@ -34,11 +35,14 @@ const router = express.Router();
 router.post('/login', login);
 router.get('/children', parentAuthMiddleware, getChildren);
 router.get('/forms/:studentId', parentAuthMiddleware, getForms);
+// Add this new route to get a specific form by student ID and form ID
+router.get('/forms/:studentId/:formId', parentAuthMiddleware, getFormById);
 router.get('/attendance/:studentId', parentAuthMiddleware, getAttendanceReport);
 router.post('/note', parentAuthMiddleware, sendNoteToTeacher);
 router.post('/note/acknowledge/:noteId', parentAuthMiddleware, acknowledgeNote);
 router.get('/teacher-details/:studentId', parentAuthMiddleware, getTeacherDetails);
-router.post('/form/fill', parentAuthMiddleware, fillForm);
+// Change this line from '/form/fill' to '/forms/fill'
+router.post('/forms/fill', parentAuthMiddleware, fillForm);
 router.post('/chat/send', parentAuthMiddleware, sendMessageToTeacher);
 router.post('/chat/history', parentAuthMiddleware, getChatHistory);
 router.post('/chat/acknowledge', parentAuthMiddleware, acknowledgeMessages);
