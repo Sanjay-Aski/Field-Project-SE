@@ -1,7 +1,8 @@
 import express from 'express';
 import mongoose from 'mongoose';
+// Fix the import paths based on the actual file structure
 import adminRoutes from './admin/admin_route.js';
-import parerentroutes from './parents/parents_routes.js';
+import parentRoutes from './parents/parents_routes.js';
 import teacherRoutes from './teacher/teacher_routes.js';
 import userRoutes from './user.js';
 import dotenv from 'dotenv';
@@ -41,7 +42,7 @@ app.use(express.json());
 
 // API routes
 app.use('/admin', adminRoutes);
-app.use('/parent', parerentroutes);
+app.use('/parent', parentRoutes);
 app.use('/teacher', teacherRoutes);
 app.use('/user', userRoutes);
 

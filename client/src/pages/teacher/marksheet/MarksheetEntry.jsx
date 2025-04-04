@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { FaArrowLeft, FaSave, FaUpload, FaFileExcel } from 'react-icons/fa';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import { FaArrowLeft, FaSave, FaUpload, FaFileExcel, FaTable, FaListAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
-const MarksheetEntry = () => {
+const MarksheetEntry = ({ spreadsheetMode }) => {
+  const location = useLocation();
+  const isSpreadsheetMode = spreadsheetMode || location.pathname.includes('mark-entry');
+  const [saving, setSaving] = useState(false);
   const [students, setStudents] = useState([]);
   const [selectedExam, setSelectedExam] = useState('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDivision, setSelectedDivision] = useState('');
   const [teacher, setTeacher] = useState(null);
   const [availableSubjects, setAvailableSubjects] = useState([]);
-
   const [maxMarks, setMaxMarks] = useState({});
   const examTypes = ['Unit-I', 'Semester-I', 'Unit-II', 'Semester-II'];
   const [marksheet, setMarksheet] = useState({});
@@ -61,30 +62,25 @@ const MarksheetEntry = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-
-      const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
+      const response = await fetch('http://localhost:5000/teacher/profile', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
       if (!response.ok) {
         throw new Error(`Failed to fetch teacher profile: ${response.status}`);
       }
-
       const data = await response.json();
       setTeacher(data.teacher);
 
       const classesSet = new Set();
-
       data.teacher.subjects.forEach((subject) => {
         classesSet.add(
           JSON.stringify({ class: subject.class, division: subject.division })
         );
       });
-
       if (data.teacher.classTeacher && data.teacher.classTeacher.class) {
         classesSet.add(
           JSON.stringify({
@@ -93,12 +89,10 @@ const MarksheetEntry = () => {
           })
         );
       }
-
       const uniqueClasses = Array.from(classesSet).map((item) =>
         JSON.parse(item)
       );
       setClasses(uniqueClasses);
-
       if (data.teacher.classTeacher && data.teacher.classTeacher.class) {
         setSelectedClass(data.teacher.classTeacher.class.toString());
         setSelectedDivision(data.teacher.classTeacher.division);
@@ -118,7 +112,6 @@ const MarksheetEntry = () => {
     if (!teacher || !selectedClass || !selectedDivision) return;
 
     const classSubjects = [];
-
     teacher.subjects.forEach((subject) => {
       if (
         subject.class.toString() === selectedClass &&
@@ -128,15 +121,8 @@ const MarksheetEntry = () => {
       }
     });
 
-    const isClassTeacher =
-      teacher.classTeacher &&
-      teacher.classTeacher.class.toString() === selectedClass &&
-      teacher.classTeacher.division === selectedDivision;
-
-    setAvailableSubjects(classSubjects);
-
     const defaultMarks = selectedExam ? getDefaultMaxMarksForExam(selectedExam) : 100;
-
+    setAvailableSubjects(classSubjects);
     const initialMaxMarks = classSubjects.reduce((acc, subject) => {
       acc[subject] = defaultMarks.toString();
       return acc;
@@ -148,26 +134,18 @@ const MarksheetEntry = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-
       const response = await fetch(
-        `http://192.168.35.107:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`,
+        `http://localhost:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
       if (!response.ok) throw new Error('Failed to fetch students');
 
       const data = await response.json();
       setStudents(data);
-
-      const initialMaxMarks = availableSubjects.reduce((acc, subject) => {
-        acc[subject] = '100';
-        return acc;
-      }, {});
-      setMaxMarks(initialMaxMarks);
 
       const initialMarksheet = {};
       data.forEach((student) => {
@@ -185,12 +163,11 @@ const MarksheetEntry = () => {
           ),
         };
       });
-
       setMarksheet(initialMarksheet);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast.error('Failed to load students');
+    } finally {
       setLoading(false);
     }
   };
@@ -244,13 +221,11 @@ const MarksheetEntry = () => {
 
     setMarksheet((prev) => {
       const newMarksheet = { ...prev };
-
       Object.keys(newMarksheet).forEach((studentId) => {
         if (newMarksheet[studentId].subjects[subject]) {
           newMarksheet[studentId].subjects[subject].totalMarks = value;
         }
       });
-
       return newMarksheet;
     });
   };
@@ -260,7 +235,6 @@ const MarksheetEntry = () => {
       toast.error('Please select an exam type');
       return;
     }
-
     if (availableSubjects.length === 0) {
       toast.error('No subjects available for this class');
       return;
@@ -269,7 +243,6 @@ const MarksheetEntry = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
-
       const updatedMarksheet = { ...marksheet };
       Object.keys(updatedMarksheet).forEach((studentId) => {
         availableSubjects.forEach((subject) => {
@@ -294,7 +267,7 @@ const MarksheetEntry = () => {
       );
 
       const response = await fetch(
-        'http://192.168.35.107:5000/teacher/assign-marksheet',
+        'http://localhost:5000/teacher/assign-marksheet',
         {
           method: 'POST',
           headers: {
@@ -306,7 +279,6 @@ const MarksheetEntry = () => {
       );
 
       if (!response.ok) throw new Error('Failed to save marksheet');
-
       toast.success('Marksheet saved successfully');
     } catch (error) {
       console.error('Error saving marksheet:', error);
@@ -320,33 +292,116 @@ const MarksheetEntry = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Check file type
+    const fileType = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx', 'xls'].includes(fileType)) {
+      toast.error('Please upload an Excel file (.xlsx or .xls)');
+      return;
+    }
+
     try {
       setUploadingExcel(true);
       const formData = new FormData();
       formData.append('file', file);
 
       const token = localStorage.getItem('token');
+      
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      // Important: Do NOT set Content-Type header for multipart/form-data
+      // The browser will set it automatically with the proper boundary
       const response = await fetch(
-        'http://192.168.35.107:5000/teacher/assign-marksheet-excel',
+        'http://localhost:5000/teacher/assign-marksheet-excel',
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`
+            // No Content-Type header here - browser will set it with correct boundary
           },
-          body: formData,
+          body: formData
         }
       );
 
-      if (!response.ok) throw new Error('Failed to upload marksheet');
+      // Check for response status first
+      if (!response.ok) {
+        let errorMessage = 'Failed to upload marksheet';
+        let errorText = await response.text();
+        console.error('Raw error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+        }
+        throw new Error(errorMessage);
+      }
 
+      // Process successful response
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      
       toast.success('Marksheet uploaded successfully');
+      
+      // Refresh data after successful upload
       await fetchClassStudents();
+      
+      // Clear the file input
+      e.target.value = '';
     } catch (error) {
       console.error('Error uploading marksheet:', error);
-      toast.error('Failed to upload marksheet');
+      toast.error(`Upload failed: ${error.message}`);
     } finally {
       setUploadingExcel(false);
     }
+  };
+
+  const downloadMarksheetTemplate = () => {
+    if (!selectedClass || !selectedDivision) {
+      toast.error('Please select class and division first');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to download templates');
+      return;
+    }
+
+    const queryParams = new URLSearchParams({
+      class: selectedClass,
+      division: selectedDivision
+    });
+
+    if (selectedExam) {
+      queryParams.append('examType', selectedExam);
+    }
+
+    fetch(`http://localhost:5000/teacher/marksheet-template?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to download template');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `marksheet-template-${selectedClass}-${selectedDivision}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        toast.success('Template downloaded successfully');
+      })
+      .catch(error => {
+        console.error('Error downloading template:', error);
+        toast.error('Failed to download template');
+      });
   };
 
   if (loading) {
@@ -360,14 +415,33 @@ const MarksheetEntry = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Marksheet Entry</h1>
-        <Link
-          to="/teacher/marksheets"
-          className="text-primary-600 hover:text-primary-700"
-        >
-          <FaArrowLeft className="inline mr-2" />
-          Back to Marksheets
-        </Link>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {isSpreadsheetMode ? 'Spreadsheet Mark Entry' : 'Marksheet Entry'}
+        </h1>
+        <div className="flex space-x-4">
+          {isSpreadsheetMode ? (
+            <Link
+              to="/teacher/marksheet/create"
+              className="text-blue-600 hover:text-blue-700 flex items-center"
+            >
+              <FaListAlt className="mr-2" /> Switch to Form View
+            </Link>
+          ) : (
+            <Link
+              to="/teacher/marksheet/mark-entry"
+              className="text-blue-600 hover:text-blue-700 flex items-center"
+            >
+              <FaTable className="mr-2" /> Switch to Spreadsheet View
+            </Link>
+          )}
+          <Link
+            to="/teacher/marksheets"
+            className="text-primary-600 hover:text-primary-700"
+          >
+            <FaArrowLeft className="inline mr-2" />
+            Back to Marksheets
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -428,257 +502,253 @@ const MarksheetEntry = () => {
               ))}
             </select>
           </div>
+        </div>
 
-          <div className="flex items-end">
-            <button
-              onClick={handleSave}
-              disabled={
-                saving ||
-                !selectedExam ||
-                !selectedClass ||
-                !selectedDivision ||
-                availableSubjects.length === 0
-              }
-              className={`px-4 py-2 rounded-md text-white flex items-center ${
-                saving ||
-                !selectedExam ||
-                !selectedClass ||
-                !selectedDivision ||
-                availableSubjects.length === 0
-                  ? 'bg-gray-400'
-                  : 'bg-primary-600 hover:bg-primary-700'
+        <div className="flex items-end">
+          <button
+            onClick={handleSave}
+            disabled={
+              saving ||
+              !selectedExam ||
+              !selectedClass ||
+              !selectedDivision ||
+              availableSubjects.length === 0
+            }
+            className={`px-4 py-2 rounded-md text-white flex items-center ${
+              saving ||
+              !selectedExam ||
+              !selectedClass ||
+              !selectedDivision ||
+              availableSubjects.length === 0
+                ? 'bg-gray-400'
+                : 'bg-primary-600 hover:bg-primary-700'
+            }`}
+          >
+            <FaSave className="mr-2" />
+            {saving ? 'Saving...' : 'Save Marksheet'}
+          </button>
+        </div>
+      </div>
+
+      {availableSubjects.length > 0 && students.length > 0 && (
+        <div className="mb-6 border-b pb-6">
+          <h3 className="text-md font-medium text-gray-800 mb-3">
+            Set Maximum Marks for All Students
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {availableSubjects.map((subject) => (
+              <div key={subject} className="flex items-center">
+                <label className="w-28 text-sm font-medium text-gray-700">
+                  {subject}:
+                </label>
+                <input
+                  type="number"
+                  value={maxMarks[subject] || '100'}
+                  onChange={(e) =>
+                    handleGlobalMaxMarksChange(subject, e.target.value)
+                  }
+                  min="1"
+                  className="ml-2 w-20 border rounded px-2 py-1"
+                  placeholder="Max Marks"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Note: These maximum marks will apply to all students in this exam
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-medium text-gray-900">Enter Student Marks</h2>
+
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={downloadMarksheetTemplate}
+            className="text-primary-600 hover:text-primary-700"
+          >
+            <FaFileExcel className="inline mr-2" />
+            Download Marksheet Template
+          </button>
+
+          <div className="relative">
+            <input
+              type="file"
+              id="excelUpload"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <label
+              htmlFor="excelUpload"
+              className={`px-4 py-2 rounded-md text-white cursor-pointer flex items-center ${
+                uploadingExcel ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
               }`}
             >
-              <FaSave className="mr-2" />
-              {saving ? 'Saving...' : 'Save Marksheet'}
-            </button>
+              <FaUpload className="mr-2" />
+              {uploadingExcel ? 'Uploading...' : 'Upload Excel'}
+            </label>
           </div>
         </div>
+      </div>
 
-        {availableSubjects.length > 0 && students.length > 0 && (
-          <div className="mb-6 border-b pb-6">
-            <h3 className="text-md font-medium text-gray-800 mb-3">
-              Set Maximum Marks for All Students
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {availableSubjects.map((subject) => (
-                <div key={subject} className="flex items-center">
-                  <label className="w-28 text-sm font-medium text-gray-700">
-                    {subject}:
-                  </label>
-                  <input
-                    type="number"
-                    value={maxMarks[subject] || '100'}
-                    onChange={(e) =>
-                      handleGlobalMaxMarksChange(subject, e.target.value)
-                    }
-                    min="1"
-                    className="ml-2 w-20 border rounded px-2 py-1"
-                    placeholder="Max Marks"
-                  />
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Note: These maximum marks will apply to all students in this exam
-            </p>
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900">Enter Student Marks</h2>
-
-          <div className="flex items-center space-x-4">
-            <a
-              href="/templates/marksheet-template.xlsx"
-              download
-              className="text-primary-600 hover:text-primary-700"
-            >
-              <FaFileExcel className="inline mr-2" />
-              Download Template
-            </a>
-
-            <div className="relative">
-              <input
-                type="file"
-                id="excelUpload"
-                accept=".xlsx,.xls"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <label
-                htmlFor="excelUpload"
-                className={`px-4 py-2 rounded-md text-white cursor-pointer flex items-center ${
-                  uploadingExcel ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                <FaUpload className="mr-2" />
-                {uploadingExcel ? 'Uploading...' : 'Upload Excel'}
-              </label>
-            </div>
-          </div>
+      {availableSubjects.length === 0 && selectedClass && selectedDivision ? (
+        <div className="text-center py-8 bg-yellow-50 rounded-md border border-yellow-200">
+          <p className="text-yellow-700">
+            You don't teach any subjects for Class {selectedClass}-{selectedDivision}.
+            Please select a different class or division.
+          </p>
         </div>
-
-        {availableSubjects.length === 0 && selectedClass && selectedDivision ? (
-          <div className="text-center py-8 bg-yellow-50 rounded-md border border-yellow-200">
-            <p className="text-yellow-700">
-              You don't teach any subjects for Class {selectedClass}-{selectedDivision}.
-              Please select a different class or division.
-            </p>
-          </div>
-        ) : students.length > 0 && availableSubjects.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
+      ) : students.length > 0 && availableSubjects.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Student
+                </th>
+                {availableSubjects.map((subject) => (
+                  <th
+                    key={subject}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    {subject}
+                    <div className="text-xxs font-normal mt-1">
+                      Max: {maxMarks[subject] || 100}
+                    </div>
                   </th>
-                  {availableSubjects.map((subject) => (
-                    <th
-                      key={subject}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      {subject}
-                      <div className="text-xxs font-normal mt-1">
-                        Max: {maxMarks[subject] || 100}
+                ))}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Overall
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {students.map((student) => {
+                let totalMarks = 0;
+                let totalMaxMarks = 0;
+                let totalSubjectsWithMarks = 0;
+                Object.entries(marksheet[student._id]?.subjects || {}).forEach(
+                  ([subject, subjectData]) => {
+                    if (availableSubjects.includes(subject) && subjectData.marks) {
+                      totalMarks += parseFloat(subjectData.marks) || 0;
+                      totalMaxMarks += parseFloat(maxMarks[subject]) || 100;
+                      totalSubjectsWithMarks++;
+                    }
+                  }
+                );
+                const overallPercentage =
+                  totalMaxMarks > 0
+                    ? ((totalMarks / totalMaxMarks) * 100).toFixed(1)
+                    : 0;
+
+                return (
+                  <tr key={student._id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {student.fullName}
                       </div>
-                    </th>
-                  ))}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Overall
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => {
-                  let totalMarks = 0;
-                  let totalMaxMarks = 0;
-                  let totalSubjectsWithMarks = 0;
+                      <div className="text-xs text-gray-500">
+                        Roll: {student.roll}
+                      </div>
+                    </td>
+                    {availableSubjects.map((subject) => {
+                      const marks =
+                        marksheet[student._id]?.subjects[subject]?.marks || '';
+                      const currentMaxMarks = maxMarks[subject] || '100';
+                      const percentage = calculatePercentage(
+                        marks,
+                        currentMaxMarks
+                      );
+                      const percentageColor = getPercentageColor(percentage);
 
-                  Object.entries(marksheet[student._id]?.subjects || {}).forEach(
-                    ([subject, subjectData]) => {
-                      if (availableSubjects.includes(subject) && subjectData.marks) {
-                        totalMarks += parseFloat(subjectData.marks) || 0;
-                        totalMaxMarks += parseFloat(maxMarks[subject]) || 100;
-                        totalSubjectsWithMarks++;
-                      }
-                    }
-                  );
-
-                  const overallPercentage =
-                    totalMaxMarks > 0
-                      ? ((totalMarks / totalMaxMarks) * 100).toFixed(1)
-                      : 0;
-
-                  return (
-                    <tr key={student._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {student.fullName}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Roll: {student.roll}
-                        </div>
-                      </td>
-                      {availableSubjects.map((subject) => {
-                        const marks =
-                          marksheet[student._id]?.subjects[subject]?.marks || '';
-                        const currentMaxMarks = maxMarks[subject] || '100';
-                        const percentage = calculatePercentage(
-                          marks,
-                          currentMaxMarks
-                        );
-                        const percentageColor = getPercentageColor(percentage);
-
-                        return (
-                          <td
-                            key={`${student._id}-${subject}`}
-                            className="px-6 py-4 whitespace-nowrap"
-                          >
-                            <div className="flex flex-col space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="number"
-                                  value={marks}
-                                  onChange={(e) =>
-                                    handleMarksChange(
-                                      student._id,
-                                      subject,
-                                      'marks',
-                                      e.target.value
-                                    )
-                                  }
-                                  min="0"
-                                  max={currentMaxMarks}
-                                  className="w-16 border rounded px-2 py-1"
-                                  placeholder="Marks"
-                                />
-                                <span className="text-gray-500">/</span>
-                                <span className="text-gray-500 text-sm">
-                                  {currentMaxMarks}
-                                </span>
-                                {marks && (
-                                  <span
-                                    className={`text-sm font-medium ${percentageColor}`}
-                                  >
-                                    {percentage}%
-                                  </span>
-                                )}
-                              </div>
+                      return (
+                        <td
+                          key={`${student._id}-${subject}`}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex items-center space-x-2">
                               <input
-                                type="text"
-                                value={
-                                  marksheet[student._id]?.subjects[subject]
-                                    ?.remarks || ''
-                                }
+                                type="number"
+                                value={marks}
                                 onChange={(e) =>
                                   handleMarksChange(
                                     student._id,
                                     subject,
-                                    'remarks',
+                                    'marks',
                                     e.target.value
                                   )
                                 }
-                                className="w-full border rounded px-2 py-1 text-sm"
-                                placeholder="Remarks"
+                                min="0"
+                                max={currentMaxMarks}
+                                className="w-16 border rounded px-2 py-1"
+                                placeholder="Marks"
                               />
+                              <span className="text-gray-500">/</span>
+                              <span className="text-gray-500 text-sm">
+                                {currentMaxMarks}
+                              </span>
+                              {marks && (
+                                <span
+                                  className={`text-sm font-medium ${percentageColor}`}
+                                >
+                                  {percentage}%
+                                </span>
+                              )}
                             </div>
-                          </td>
-                        );
-                      })}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {totalSubjectsWithMarks > 0 && (
-                          <div className="text-center">
-                            <div
-                              className={`text-sm font-bold ${getPercentageColor(
-                                overallPercentage
-                              )}`}
-                            >
-                              {overallPercentage}%
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {totalMarks}/{totalMaxMarks}
-                            </div>
+                            <input
+                              type="text"
+                              value={
+                                marksheet[student._id]?.subjects[subject]?.remarks || ''
+                              }
+                              onChange={(e) =>
+                                handleMarksChange(
+                                  student._id,
+                                  subject,
+                                  'remarks',
+                                  e.target.value
+                                )
+                              }
+                              className="w-full border rounded px-2 py-1 text-sm"
+                              placeholder="Remarks"
+                            />
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200">
-            <p className="text-gray-500">
-              {selectedClass && selectedDivision
-                ? 'No students found in this class. Please select a different class or division.'
-                : 'Please select a class and division to view students.'}
-            </p>
-          </div>
-        )}
-      </div>
+                        </td>
+                      );
+                    })}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {totalSubjectsWithMarks > 0 && (
+                        <div className="text-center">
+                          <div
+                            className={`text-sm font-bold ${getPercentageColor(
+                              overallPercentage
+                            )}`}
+                          >
+                            {overallPercentage}%
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {totalMarks}/{totalMaxMarks}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200">
+          <p className="text-gray-500">
+            {selectedClass && selectedDivision
+              ? 'No students found in this class. Please select a different class or division.'
+              : 'Please select a class and division to view students.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

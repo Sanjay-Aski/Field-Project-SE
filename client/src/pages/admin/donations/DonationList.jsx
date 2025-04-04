@@ -16,7 +16,7 @@ const DonationList = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.35.107:5000/admin/donations', {
+      const response = await fetch('http://localhost:5000/admin/donations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -45,7 +45,7 @@ const DonationList = () => {
       console.log(`Approving donation ${donationId} for user ${userId}`);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.35.107:5000/admin/donation/assign', {
+      const response = await fetch('http://localhost:5000/admin/donation/assign', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,7 +90,7 @@ const DonationList = () => {
       const token = localStorage.getItem('token');
       
       // First try to fix all donation statuses
-      await fetch('http://192.168.35.107:5000/admin/donations/fix-statuses', {
+      await fetch('http://localhost:5000/admin/donations/fix-statuses', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -103,7 +103,7 @@ const DonationList = () => {
       // Wait a moment for the fix to complete
       setTimeout(async () => {
         // Then retry the approval
-        const response = await fetch('http://192.168.35.107:5000/admin/donation/assign', {
+        const response = await fetch('http://localhost:5000/admin/donation/assign', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -135,7 +135,7 @@ const DonationList = () => {
       console.log(`Rejecting donation ${donationId} for user ${userId}`);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.35.107:5000/admin/donation/reject', {
+      const response = await fetch('http://localhost:5000/admin/donation/reject', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

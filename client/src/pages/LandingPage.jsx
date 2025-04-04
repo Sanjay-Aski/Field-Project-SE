@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaUserGraduate, FaChalkboardTeacher, FaUsers, FaBook, FaMedal, FaSchool } from 'react-icons/fa';
+import GoogleMapIframe from './GoogleMapIframe';
 
 const LandingPage = () => {
   return (
     <div className="bg-gradient-to-b from-white to-sand min-h-screen">
-      {/* Hero Section with full-height background image */}
       <header className="bg-primary-800 text-white relative">
         <div className="absolute inset-0 bg-black opacity-30"></div>
         <div className="relative container mx-auto px-6 py-20 md:py-32 md:flex md:items-center">
@@ -33,12 +33,12 @@ const LandingPage = () => {
           </div>
           <div className="md:w-1/2 mt-8 md:mt-0 z-10">
             <img 
-              src="/school-building.jpg" 
+              src="https://i0.wp.com/world-education-blog.org/wp-content/uploads/2019/09/ild-2019-gif-en.gif?fit=1024%2C1024ssl=1" 
               alt="R.I. Vidya Mandir School Building" 
-              className="rounded-lg shadow-xl w-full h-auto object-cover"
+              className="rounded-lg shadow-xl w-50 h-50 object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/600x400?text=School+Building';
+                e.target.src = 'https://via.placeholder.com/600x400?text=R.I.+Vidya+Mandir';
               }}
             />
           </div>
@@ -56,9 +56,9 @@ const LandingPage = () => {
           <div className="md:flex md:items-center md:gap-12">
             <div className="md:w-1/2 mb-8 md:mb-0">
               <img 
-                src="/students.jpg" 
+                src="https://legal60.com/wp-content/uploads/2022/06/right-to-receive-proper-education-a-fundamental-right-under-article-21a-allahabad-high-court.jpg" 
                 alt="Happy students at R.I. Vidya Mandir" 
-                className="rounded-lg shadow-lg w-full h-auto object-cover"
+                className="rounded-lg w-full h-auto object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = 'https://via.placeholder.com/600x400?text=Our+Students';
@@ -172,7 +172,7 @@ const LandingPage = () => {
               <div className="p-8 md:w-1/2">
                 <h2 className="text-2xl font-bold mb-6 text-gray-800">Our Location</h2>
                 <div className="h-64 bg-gray-200 rounded-lg overflow-hidden">
-                  {/* Placeholder for map or school image */}
+                  <GoogleMapIframe />
                   <div className="h-full flex items-center justify-center bg-gray-200 text-gray-500">
                     <p className="text-center p-4">
                       R.I. Vidya Mandir is located in Ward No.102, Kalyan Dombivli-URC1, Thane District, Maharashtra

@@ -31,7 +31,7 @@ const ChatPage = () => {
         // If studentId is provided, fetch student information
         if (studentId) {
           // Fetch student data
-          const studentResponse = await fetch(`http://192.168.35.107:5000/parent/children`, {
+          const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -53,7 +53,7 @@ const ChatPage = () => {
           setStudent(currentStudent);
           
           // Fetch teachers for this student
-          const teachersResponse = await fetch(`http://192.168.35.107:5000/parent/teacher-details/${studentId}`, {
+          const teachersResponse = await fetch(`http://localhost:5000/parent/teacher-details/${studentId}`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -85,7 +85,7 @@ const ChatPage = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.35.107:5000/parent/chat/history', {
+      const response = await fetch('http://localhost:5000/parent/chat/history', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -119,7 +119,7 @@ const ChatPage = () => {
     try {
       const token = localStorage.getItem('token');
       
-      let endpoint = 'http://192.168.35.107:5000/parent/chat/send';
+      let endpoint = 'http://localhost:5000/parent/chat/send';
       let body = {
         message: newMessage,
         studentId: studentId
@@ -128,7 +128,7 @@ const ChatPage = () => {
       if (view === 'individual') {
         body.teacherId = selectedTeacher._id;
       } else {
-        endpoint = 'http://192.168.35.107:5000/parent/chat/group/send';
+        endpoint = 'http://localhost:5000/parent/chat/group/send';
         body.groupId = selectedGroup.id;
       }
       

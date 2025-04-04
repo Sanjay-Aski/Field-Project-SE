@@ -57,7 +57,7 @@ const AttendanceEntryPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
+      const response = await fetch('http://localhost:5000/teacher/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -120,7 +120,7 @@ const AttendanceEntryPage = () => {
       setLoadingAttendance(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://192.168.35.107:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`, {
+      const response = await fetch(`http://localhost:5000/teacher/class-students?class=${selectedClass}&division=${selectedDivision}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -244,7 +244,7 @@ const AttendanceEntryPage = () => {
             presentDates: [selectedDate]
           };
 
-          const response = await fetch('http://192.168.35.107:5000/teacher/assign-attendance', {
+          const response = await fetch('http://localhost:5000/teacher/assign-attendance', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -288,9 +288,9 @@ const AttendanceEntryPage = () => {
       let endpoint = '';
 
       if (activeTab === 'upload-attendance') {
-        endpoint = 'http://192.168.35.107:5000/teacher/assign-attendance-excel';
+        endpoint = 'http://localhost:5000/teacher/assign-attendance-excel';
       } else if (activeTab === 'working-days') {
-        endpoint = 'http://192.168.35.107:5000/teacher/set-working-days-excel';
+        endpoint = 'http://localhost:5000/teacher/set-working-days-excel';
       }
 
       const response = await fetch(endpoint, {
@@ -344,7 +344,7 @@ const AttendanceEntryPage = () => {
         workingDays
       };
 
-      const response = await fetch('http://192.168.35.107:5000/teacher/set-working-days', {
+      const response = await fetch('http://localhost:5000/teacher/set-working-days', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

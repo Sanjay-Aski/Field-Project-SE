@@ -39,7 +39,7 @@ const StudentMarksheet = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const studentResponse = await fetch(`http://192.168.35.107:5000/parent/children`, {
+      const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,7 +61,7 @@ const StudentMarksheet = () => {
       setStudent(currentStudent);
       
       // Fetch all subjects for this class - we'll get this from the teacher profile
-      const subjectsResponse = await fetch('http://192.168.35.107:5000/parent/class-subjects', {
+      const subjectsResponse = await fetch('http://localhost:5000/parent/class-subjects', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -80,7 +80,7 @@ const StudentMarksheet = () => {
         }
       }
 
-      const marksheetResponse = await fetch(`http://192.168.35.107:5000/parent/marksheet/exams/${studentId}`, {
+      const marksheetResponse = await fetch(`http://localhost:5000/parent/marksheet/exams/${studentId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -119,7 +119,7 @@ const StudentMarksheet = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://192.168.35.107:5000/parent/marksheet/${studentId}/${selectedExam}`, {
+      const response = await fetch(`http://localhost:5000/parent/marksheet/${studentId}/${selectedExam}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -261,7 +261,7 @@ const StudentMarksheet = () => {
         percentage: percentage.toFixed(2)
       };
 
-      const response = await fetch(`http://192.168.35.107:5000/teacher/marksheet/update`, {
+      const response = await fetch(`http://localhost:5000/teacher/marksheet/update`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

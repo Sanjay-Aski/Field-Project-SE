@@ -33,7 +33,7 @@ const MarksheetPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch('http://192.168.35.107:5000/teacher/profile', {
+      const response = await fetch('http://localhost:5000/teacher/profile', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -89,7 +89,7 @@ const MarksheetPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      let url = `http://192.168.35.107:5000/teacher/class-marksheets?classNum=${selectedClass}&division=${selectedDivision}`;
+      let url = `http://localhost:5000/teacher/class-marksheets?classNum=${selectedClass}&division=${selectedDivision}`;
       
       if (selectedExamType) {
         url += `&examType=${encodeURIComponent(selectedExamType)}`;
@@ -146,7 +146,7 @@ const MarksheetPage = () => {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch('http://192.168.35.107:5000/teacher/assign-marksheet-excel', {
+      const response = await fetch('http://localhost:5000/teacher/assign-marksheet-excel', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -171,6 +171,59 @@ const MarksheetPage = () => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const downloadMarksheetTemplate = () => {
+    if (!selectedClass || !selectedDivision) {
+      toast.error('Please select class and division first');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to download templates');
+      return;
+    }
+
+    // Construct the URL for template download
+    const queryParams = new URLSearchParams({
+      class: selectedClass,
+      division: selectedDivision
+    });
+
+    // Add exam type if selected
+    if (selectedExamType) {
+      queryParams.append('examType', selectedExamType);
+    }
+
+    // Use fetch with authorization header instead of direct link
+    fetch(`http://localhost:5000/teacher/marksheet-template?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to download template');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create a download link for the blob
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `marksheet-template-${selectedClass}-${selectedDivision}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        toast.success('Template downloaded successfully');
+      })
+      .catch(error => {
+        console.error('Error downloading template:', error);
+        toast.error('Failed to download template');
+      });
   };
 
   const viewMarksheetDetail = (studentId) => {
@@ -331,16 +384,22 @@ const MarksheetPage = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {marksheetData.map((item) => (
-                            item.marksheets.length > 0 ? (
-                              item.marksheets.map((marksheet, idx) => (
+                          {marksheetData.map((item) => {
+                            // Filter valid marksheets first
+                            const validMarksheets = item.marksheets.filter(marksheet => 
+                              marksheet.examType !== item.student.fullName && 
+                              ['Unit-I', 'Semester-I', 'Unit-II', 'Semester-II'].includes(marksheet.examType)
+                            );
+                            
+                            return validMarksheets.length > 0 ? (
+                              validMarksheets.map((marksheet, idx) => (
                                 <tr key={`${item.student._id}-${idx}`}>
                                   {idx === 0 && (
                                     <>
-                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" rowSpan={item.marksheets.length}>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" rowSpan={validMarksheets.length}>
                                         {item.student.roll}
                                       </td>
-                                      <td className="px-6 py-4 whitespace-nowrap" rowSpan={item.marksheets.length}>
+                                      <td className="px-6 py-4 whitespace-nowrap" rowSpan={validMarksheets.length}>
                                         <div className="text-sm font-medium text-gray-900">{item.student.fullName}</div>
                                       </td>
                                     </>
@@ -369,7 +428,7 @@ const MarksheetPage = () => {
                                       onClick={() => viewMarksheetDetail(item.student._id)}
                                       className="text-primary-600 hover:text-primary-900"
                                     >
-                                      <FaEye className="inline mr-1" /> View
+                                       View
                                     </button>
                                   </td>
                                 </tr>
@@ -394,8 +453,8 @@ const MarksheetPage = () => {
                                   </button>
                                 </td>
                               </tr>
-                            )
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -450,13 +509,12 @@ const MarksheetPage = () => {
                     </label>
 
                     <div className="mt-4">
-                      <a
-                        href="/templates/marksheet-template.xlsx"
-                        download
+                      <button
+                        onClick={downloadMarksheetTemplate}
                         className="text-primary-600 hover:text-primary-700 text-sm inline-flex items-center"
                       >
-                        <FaFileExcel className="mr-1" /> Download Excel Template
-                      </a>
+                        <FaFileExcel className="mr-1" /> Download Marksheet Template
+                      </button>
                     </div>
                   </div>
                 </div>

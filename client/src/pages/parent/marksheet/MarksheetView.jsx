@@ -19,7 +19,7 @@ const MarksheetView = () => {
             const token = localStorage.getItem('token');
             
             // First fetch student details
-            const studentResponse = await fetch(`http://192.168.35.107:5000/parent/children`, {
+            const studentResponse = await fetch(`http://localhost:5000/parent/children`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -31,7 +31,7 @@ const MarksheetView = () => {
             setStudent(currentStudent);
 
             // Then fetch marksheets
-            const marksheetsResponse = await fetch(`http://192.168.35.107:5000/parent/student/${studentId}/marksheets`, {
+            const marksheetsResponse = await fetch(`http://localhost:5000/parent/student/${studentId}/marksheets`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

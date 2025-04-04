@@ -926,16 +926,22 @@ const assignMarksheetFromExcel = async (req, res) => {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
 
-        if (jsonData.length < 2) {
-            return res.status(400).json({ error: "Invalid Excel format." });
+        // If the first row is instructions, skip it.
+        let startRow = 0;
+        if (jsonData[0] && jsonData[0][0] && jsonData[0][0].toString().trim().toUpperCase() === "INSTRUCTIONS:") {
+            startRow = 1;
         }
 
-        const headers = jsonData[0];
-
         const results = [];
-        for (let i = 1; i < jsonData.length; i++) {
+        for (let i = startRow; i < jsonData.length; i++) {
             const row = jsonData[i];
-            if (!row[0]) continue; // Skip empty rows
+            if (!row[0] || row[0].toString().trim() === "") continue; // Skip blank rows
+
+            // Validate that the Student ID in the first column is a valid ObjectId.
+            if (!mongoose.Types.ObjectId.isValid(row[0])) {
+                console.warn(`Skipping row ${i + 1}: invalid ObjectId for student id: ${row[0]}`);
+                continue;
+            }
 
             const studentId = row[0];
             const examType = row[1];
@@ -953,7 +959,7 @@ const assignMarksheetFromExcel = async (req, res) => {
             let totalMarks = 0;
 
             // Process subjects dynamically
-            for (let j = 2; j < headers.length; j += 4) {
+            for (let j = 2; j < jsonData[0].length; j += 4) {
                 if (!row[j]) break; // Stop if subject is missing
 
                 let subject = row[j];
@@ -1384,7 +1390,7 @@ const getParentContacts = async (req, res) => {
     } catch (error) {
         console.error('Error fetching parent contacts:', error);
         res.status(500).json({ 
-            success: false, 
+            success: false,
             message: 'Error fetching contacts', 
             error: error.message 
         });
@@ -1449,6 +1455,150 @@ const getUnreadMessagesCount = async (req, res) => {
     }
 };
 
+const getMarksheetTemplate = async (req, res) => {
+    try {
+        // Get class, division and exam type from query parameters
+        const { class: classNum, division, examType } = req.query;
+        
+        // Validate input
+        if (!classNum || !division) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Class and division are required parameters' 
+            });
+        }
+        
+        // Check if exam type is valid
+        const validExamTypes = ['Unit-I', 'Semester-I', 'Unit-II', 'Semester-II'];
+        const selectedExamType = validExamTypes.includes(examType) ? examType : '';
+        
+        // Fetch students from the specified class
+        const students = await Student.find({
+            class: classNum,
+            division: division
+        }).sort({ roll: 1 }).select('_id fullName roll');
+        
+        if (!students || students.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No students found in this class'
+            });
+        }
+        
+        // Create a new workbook
+        const workbook = xlsx.utils.book_new();
+        
+        // Create the headers
+        const headers = ['Student ID', 'Student Name', 'Roll No', 'Exam Type'];
+        
+        // Get subjects taught by the teacher in this class
+        const teacherSubjects = req.teacher.subjects
+            .filter(subject => 
+                subject.class.toString() === classNum.toString() && 
+                subject.division === division
+            )
+            .map(subject => subject.subject);
+        
+        // If no subjects found for this teacher in this class, use default subjects
+        const subjectsToUse = teacherSubjects.length > 0 ? 
+            teacherSubjects : 
+            ['Mathematics', 'Science', 'English', 'Social Studies'];
+        
+        // Add subject columns (each with marks, total marks, and remarks columns)
+        subjectsToUse.forEach(subject => {
+            headers.push(`${subject} Marks`);
+            headers.push(`${subject} Max Marks`);
+            headers.push(`${subject} Remarks`);
+        });
+        
+        // Create data rows with student information pre-filled
+        const data = [headers];
+        
+        // Add rows for actual students with pre-filled information
+        students.forEach(student => {
+            const studentRow = [
+                student._id.toString(),                // Actual student ID
+                student.fullName,                      // Actual student name
+                student.roll.toString(),               // Actual roll number
+                selectedExamType                       // Pre-selected exam type (if provided)
+            ];
+            
+            // Add empty cells for marks, with default max marks value
+            subjectsToUse.forEach(subject => {
+                studentRow.push(''); // Empty marks cell
+                // Use appropriate default max marks based on exam type
+                const defaultMaxMarks = selectedExamType && 
+                    (selectedExamType === 'Unit-I' || selectedExamType === 'Unit-II') ? 
+                    '20' : '100';
+                studentRow.push(defaultMaxMarks); // Default max marks based on exam type
+                studentRow.push(''); // Empty remarks cell
+            });
+            
+            data.push(studentRow);
+        });
+        
+        // Create the worksheet with the data
+        const worksheet = xlsx.utils.aoa_to_sheet(data);
+        
+        // Set column widths for better readability
+        const colWidths = [
+            { wch: 24 }, // Student ID
+            { wch: 20 }, // Student Name
+            { wch: 8 },  // Roll No
+            { wch: 15 }, // Exam Type
+        ];
+        
+        subjectsToUse.forEach(() => {
+            colWidths.push({ wch: 10 }); // Marks
+            colWidths.push({ wch: 10 }); // Max Marks  
+            colWidths.push({ wch: 20 }); // Remarks
+        });
+        
+        worksheet['!cols'] = colWidths;
+        
+        // Add instructions below the data
+        const lastRowIndex = data.length + 2;
+        
+        const instructions = [
+            ['INSTRUCTIONS:'],
+            ['1. Do not modify the Student ID, Student Name, Roll No and Exam Type columns'],
+            ['2. Enter marks and optional remarks for each subject'],
+            ['3. Max Marks are pre-filled but can be adjusted if needed'],
+        ];
+        
+        if (!selectedExamType) {
+            // Add instruction about exam type if not pre-selected
+            instructions.push(['4. Add one of these exam types: Unit-I, Semester-I, Unit-II, or Semester-II']);
+        }
+        
+        xlsx.utils.sheet_add_aoa(worksheet, instructions, { origin: `A${lastRowIndex}` });
+        
+        // Generate filename based on class, division and exam type
+        const filenameExamPart = selectedExamType ? `-${selectedExamType}` : '';
+        const filename = `marksheet-class-${classNum}-${division}${filenameExamPart}.xlsx`;
+        
+        // Add the worksheet to the workbook
+        xlsx.utils.book_append_sheet(workbook, worksheet, `Class ${classNum}-${division} Marksheet`);
+        
+        // Generate buffer
+        const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        
+        // Set the appropriate headers
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        
+        // Send the file
+        res.send(buffer);
+    } catch (error) {
+        console.error('Error generating marksheet template:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error generating template', 
+            error: error.message 
+        });
+    }
+};
+
 export { 
     login, 
     assignMarksheet, 
@@ -1476,6 +1626,7 @@ export {
     submitComplaint,
     getParentContacts,
     getUnreadMessagesCount,
-    getMarksheets
+    getMarksheets,
+    getMarksheetTemplate
 };
 
