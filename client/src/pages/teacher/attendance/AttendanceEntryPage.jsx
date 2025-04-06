@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCalendarAlt, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaFileExcel, FaCalendarCheck } from 'react-icons/fa';
+import { FaCalendarAlt, FaCheckCircle, FaTimesCircle, FaArrowLeft, FaFileExcel, FaCalendarCheck, FaCalendarWeek, FaCalendarDay } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -15,6 +15,7 @@ const AttendanceEntryPage = () => {
   const [activeTab, setActiveTab] = useState('mark-attendance');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [attendanceStats, setAttendanceStats] = useState([]);
   const [error, setError] = useState(null);
@@ -25,6 +26,8 @@ const AttendanceEntryPage = () => {
   const [calendarDays, setCalendarDays] = useState([]);
   const [isClassTeacher, setIsClassTeacher] = useState(false);
   const [unauthorizedError, setUnauthorizedError] = useState(null);
+  const [dailyAttendance, setDailyAttendance] = useState([]);
+  const [daysInCurrentMonth, setDaysInCurrentMonth] = useState([]);
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -41,7 +44,6 @@ const AttendanceEntryPage = () => {
 
   useEffect(() => {
     if (selectedClass && selectedDivision && teacher) {
-      // Remove authorization checks - allow all teachers access
       setUnauthorizedError(null);
       fetchStudents();
       if (activeTab === 'working-days') {
@@ -71,16 +73,11 @@ const AttendanceEntryPage = () => {
 
       const data = await response.json();
       setTeacher(data.teacher);
-      
-      // Remove class teacher checks - all teachers can access attendance
       setIsClassTeacher(true);
-      
-      // If URL has class and division parameters, use them
+
       if (selectedClass && selectedDivision) {
-        // No need to check if it matches teacher's class
         setUnauthorizedError(null);
       } else if (data.teacher.classTeacher && data.teacher.classTeacher.class) {
-        // If no class/division selected yet, default to teacher's assigned class if available
         setSelectedClass(data.teacher.classTeacher.class.toString());
         setSelectedDivision(data.teacher.classTeacher.division);
       }
@@ -164,22 +161,43 @@ const AttendanceEntryPage = () => {
         const dateStr = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         days.push(dateStr);
       }
-
+      
       setCalendarDays(days);
 
-      setTimeout(() => {
-        const mockWorkingDays = days.filter(day => {
+      const response = await fetch(`http://localhost:5000/teacher/working-days?month=${encodeURIComponent(selectedMonth)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch working days: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.workingDays && Array.isArray(data.workingDays)) {
+        setWorkingDays(data.workingDays);
+      } else {
+        const defaultWorkingDays = days.filter(day => {
           const date = new Date(day);
           return date.getDay() !== 0 && date.getDay() !== 6;
         });
-
-        setWorkingDays(mockWorkingDays);
-        setLoadingAttendance(false);
-      }, 500);
-
+        setWorkingDays(defaultWorkingDays);
+      }
+      
     } catch (error) {
       console.error('Error fetching working days:', error);
       toast.error('Failed to load working days. Please try again.');
+      
+      const defaultWorkingDays = calendarDays.filter(day => {
+        const date = new Date(day);
+        return date.getDay() !== 0 && date.getDay() !== 6;
+      });
+      setWorkingDays(defaultWorkingDays);
+    } finally {
       setLoadingAttendance(false);
     }
   };
@@ -187,23 +205,43 @@ const AttendanceEntryPage = () => {
   const fetchAttendanceStats = async () => {
     try {
       setLoadingAttendance(true);
-
-      setTimeout(() => {
-        const stats = students.map(student => ({
-          ...student,
-          attendance: {
-            present: Math.floor(Math.random() * 20) + 10,
-            absent: Math.floor(Math.random() * 10)
-          }
-        }));
-
-        setAttendanceStats(stats);
+      const token = localStorage.getItem('token');
+      
+      if (!selectedClass || !selectedDivision || !selectedMonth) {
+        toast.error('Please select class, division and month');
         setLoadingAttendance(false);
-      }, 500);
+        return;
+      }
 
+      const response = await fetch(
+        `http://localhost:5000/teacher/monthly-attendance?classNum=${selectedClass}&division=${selectedDivision}&month=${encodeURIComponent(selectedMonth)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to fetch attendance data: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && Array.isArray(data.attendanceStats)) {
+        setAttendanceStats(data.attendanceStats);
+      } else {
+        setAttendanceStats([]);
+        toast.info('No attendance records found for this month');
+      }
     } catch (error) {
       console.error('Error fetching attendance stats:', error);
       toast.error('Failed to load attendance statistics. Please try again.');
+      setAttendanceStats([]);
+    } finally {
       setLoadingAttendance(false);
     }
   };
@@ -341,7 +379,9 @@ const AttendanceEntryPage = () => {
 
       const requestData = {
         month: selectedMonth,
-        workingDays
+        workingDays,
+        class: selectedClass,
+        division: selectedDivision
       };
 
       const response = await fetch('http://localhost:5000/teacher/set-working-days', {
@@ -358,13 +398,69 @@ const AttendanceEntryPage = () => {
         throw new Error(errorData.error || 'Failed to set working days');
       }
 
+      const data = await response.json();
       toast.success('Working days set successfully!');
+      
+      if (data.workingDays) {
+        setWorkingDays(data.workingDays);
+      }
     } catch (error) {
       console.error('Error setting working days:', error);
       toast.error(`Failed to set working days: ${error.message}`);
     } finally {
       setLoadingAttendance(false);
     }
+  };
+
+  const downloadAttendanceTemplate = (templateType) => {
+    if (!selectedClass || !selectedDivision) {
+      toast.error('Please select class and division first');
+      return;
+    }
+
+    setIsDownloading(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to download templates');
+      setIsDownloading(false);
+      return;
+    }
+
+    const queryParams = new URLSearchParams({
+      class: selectedClass,
+      division: selectedDivision,
+      type: templateType
+    });
+
+    fetch(`http://localhost:5000/teacher/attendance-template?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to download template');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `attendance-template-${templateType}-${selectedClass}-${selectedDivision}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        toast.success(`${templateType.charAt(0).toUpperCase() + templateType.slice(1)} attendance template downloaded successfully`);
+      })
+      .catch(error => {
+        console.error('Error downloading template:', error);
+        toast.error('Failed to download template');
+      })
+      .finally(() => {
+        setIsDownloading(false);
+      });
   };
 
   if (loading) {
@@ -622,14 +718,27 @@ const AttendanceEntryPage = () => {
                       </label>
                     </div>
 
-                    <div className="mt-4">
-                      <a
-                        href="/templates/attendance-template.xlsx"
-                        download
-                        className="text-primary-600 hover:text-primary-700 text-sm inline-flex items-center"
-                      >
-                        <FaFileExcel className="mr-1" /> Download Excel Template
-                      </a>
+                    <div className="mt-6">
+                      <h3 className="text-md font-medium text-gray-700 mb-3">Download Templates</h3>
+                      <div className="flex flex-wrap gap-3">
+                        <button 
+                          onClick={() => downloadAttendanceTemplate('weekly')}
+                          disabled={isDownloading}
+                          className="text-primary-600 hover:text-primary-700 flex items-center border border-primary-200 bg-primary-50 hover:bg-primary-100 rounded-md px-3 py-2 text-sm transition-colors"
+                        >
+                          <FaCalendarWeek className="mr-1" />
+                          {isDownloading ? 'Downloading...' : 'Weekly Template'}
+                        </button>
+                        
+                        <button 
+                          onClick={() => downloadAttendanceTemplate('monthly')}
+                          disabled={isDownloading}
+                          className="text-primary-600 hover:text-primary-700 flex items-center border border-primary-200 bg-primary-50 hover:bg-primary-100 rounded-md px-3 py-2 text-sm transition-colors"
+                        >
+                          <FaCalendarDay className="mr-1" />
+                          {isDownloading ? 'Downloading...' : 'Monthly Template'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -647,7 +756,6 @@ const AttendanceEntryPage = () => {
                     </p>
 
                     <div className="grid grid-cols-7 gap-2 mb-6">
-                      {/* Day names as column headers */}
                       {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(dayName => (
                         <div 
                           key={dayName} 
@@ -657,20 +765,18 @@ const AttendanceEntryPage = () => {
                         </div>
                       ))}
                       
-                      {/* Empty cells for padding before the first day of month */}
                       {(() => {
                         const [monthName, yearStr] = selectedMonth.split(' ');
                         const monthIndex = new Date(`${monthName} 1, ${yearStr}`).getMonth();
                         const year = parseInt(yearStr);
                         const firstDay = new Date(year, monthIndex, 1);
-                        const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday, 6 = Saturday
+                        const firstDayOfWeek = firstDay.getDay();
                         
                         return Array.from({ length: firstDayOfWeek }).map((_, index) => (
                           <div key={`empty-start-${index}`} className="p-3 rounded-md"></div>
                         ));
                       })()}
                       
-                      {/* Calendar days */}
                       {calendarDays.map(dateString => {
                         const day = new Date(dateString).getDate();
                         const isWorkingDay = workingDays.includes(dateString);
@@ -713,9 +819,20 @@ const AttendanceEntryPage = () => {
                   </div>
 
                   <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <div className="flex items-center mb-4">
-                      <FaFileExcel className="text-green-600 text-xl mr-2" />
-                      <span className="font-medium">Upload Working Days Excel</span>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center">
+                        <FaFileExcel className="text-green-600 text-xl mr-2" />
+                        <span className="font-medium">Upload Working Days Excel</span>
+                      </div>
+                      
+                      <button
+                        onClick={() => downloadAttendanceTemplate('monthly')}
+                        className="text-primary-600 hover:text-primary-700 flex items-center text-sm"
+                        disabled={isDownloading}
+                      >
+                        <FaFileExcel className="mr-1" />
+                        {isDownloading ? 'Downloading...' : 'Download Template'}
+                      </button>
                     </div>
 
                     <p className="text-sm text-gray-600 mb-4">
@@ -742,10 +859,18 @@ const AttendanceEntryPage = () => {
 
               {activeTab === 'view-attendance' && (
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">
-                    Monthly Attendance for {selectedMonth}
-                  </h2>
-
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-medium text-gray-900">
+                      Monthly Attendance for {selectedMonth}
+                    </h2>
+                    <button
+                      onClick={fetchAttendanceStats}
+                      className="px-3 py-1 bg-primary-600 text-white rounded-md hover:bg-primary-700 text-sm"
+                    >
+                      Refresh Data
+                    </button>
+                  </div>
+                  
                   {attendanceStats.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
@@ -808,7 +933,7 @@ const AttendanceEntryPage = () => {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-gray-500">No attendance data available for this class.</p>
+                      <p className="text-gray-500">No attendance data available for this class and month. Mark attendance first or select a different period.</p>
                     </div>
                   )}
                 </div>

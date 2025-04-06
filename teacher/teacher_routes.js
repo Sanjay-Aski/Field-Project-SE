@@ -5,6 +5,7 @@ import {
     login, 
     assignMarksheet, 
     setWorkingDays,
+    getWorkingDays,
     assignAttendance, 
     getAttendance,
     getMarksheet, 
@@ -29,16 +30,16 @@ import {
     getParentContacts,
     getUnreadMessagesCount,
     getMarksheets,
-    getMarksheetTemplate
+    getMarksheetTemplate,
+    getAttendanceTemplate,
+    getMonthlyAttendance
 } from './teacher_controller.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Authentication route
 router.post('/login', login);
 
-// Teacher profile routes
 router.get('/profile', auth, getTeacherProfile);
 
 // Student management routes
@@ -58,7 +59,10 @@ router.post('/attendance', auth, getAttendance);
 router.get('/attendance-report/:studentId', auth, getAttendanceReport);
 router.post('/assign-attendance-excel', auth, upload.single('file'), assignAttendanceFromExcel);
 router.post('/set-working-days', auth, setWorkingDays);
+router.get('/working-days', auth, getWorkingDays);
 router.post('/set-working-days-excel', auth, upload.single('file'), setWorkingDaysFromExcel);
+router.get('/monthly-attendance', auth, getMonthlyAttendance);
+router.get('/attendance-template', auth, getAttendanceTemplate);
 
 // Communication routes
 router.post('/give-note', auth, giveNote);
