@@ -417,12 +417,6 @@ const FormBuilder = () => {
         </h1>
         <div className="flex space-x-3">
           <button
-            onClick={() => setShowPreview(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
-          >
-            <FaEye className="mr-2" /> Preview
-          </button>
-          <button
             onClick={() => navigate('/teacher/forms')}
             className="flex items-center text-gray-600 hover:text-gray-900"
           >

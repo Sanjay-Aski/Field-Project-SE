@@ -1243,12 +1243,46 @@ const assignAttendanceFromExcel = async (req, res) => {
 
         const monthWorkingRecord = schoolDoc.attendance.find(item => item.month === month);
         const workingDays = monthWorkingRecord.workingDays;
+        
+        // Convert workingDays to a set of normalized date strings for easier comparison
+        const workingDaySet = new Set(workingDays.map(day => {
+            const d = new Date(day);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }));
                 
         // Find student ID column and date columns
         const studentIdColumnIndex = headers.findIndex(h => h === 'Student ID');
         if (studentIdColumnIndex === -1) {
             return res.status(400).send({ error: "Could not find 'Student ID' column in Excel." });
         }
+        
+        // Map column indices to dates
+        const dateColumnMap = new Map();
+        const summaryColumnIndices = new Set(); // To track summary columns
+        
+        headers.forEach((header, index) => {
+            // Skip the first 3 columns (Student ID, Name, Roll) and summary columns at the end
+            if (index > 2 && header !== 'Total Present' && header !== 'Total Absent' && header !== 'Percentage') {
+                // Check if the header is a number (day of month)
+                if (!isNaN(parseInt(header))) {
+                    const day = parseInt(header);
+                    const [monthName, yearStr] = month.split(' ');
+                    const monthIndex = new Date(`${monthName} 1, ${yearStr}`).getMonth();
+                    const year = parseInt(yearStr);
+                    
+                    // Create the date object and a normalized string version
+                    const date = new Date(year, monthIndex, day);
+                    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    // Only include this column if it's a working day
+                    if (workingDaySet.has(dateStr)) {
+                        dateColumnMap.set(index, dateStr);
+                    }
+                }
+            } else if (header === 'Total Present' || header === 'Total Absent' || header === 'Percentage') {
+                summaryColumnIndices.add(index);
+            }
+        });
 
         // Process attendance data by student
         for (let i = 1; i < jsonData.length; i++) {
@@ -1260,50 +1294,44 @@ const assignAttendanceFromExcel = async (req, res) => {
 
             const presentDates = [];
 
-            // Go through each date column (starting from column 3)
-            for (let j = 3; j < headers.length; j++) {
-                // Skip the summary columns at the end (last 3 columns)
-                if (j >= headers.length - 3) continue;
+            // Check each date column for present marks
+            dateColumnMap.forEach((dateStr, columnIndex) => {
+                const cellValue = row[columnIndex];
                 
-                const cellValue = row[j];
-                
-                // If the cell contains 'p', it means the student was present on that day
-                if (cellValue && cellValue.toString().toLowerCase() === 'p') {
-                    // Determine which day this column represents
-                    const dayOfMonth = j - 3 + 1; // Offset by 3 for the first 3 columns, then add 1 to get actual day
+                // If the cell contains 'p' or any value that indicates presence
+                if (cellValue && String(cellValue).toLowerCase().includes('p')) {
+                    // Convert the date string to a Date object
+                    const year = parseInt(dateStr.split('-')[0]);
+                    const month = parseInt(dateStr.split('-')[1]) - 1; // JavaScript months are 0-indexed
+                    const day = parseInt(dateStr.split('-')[2]);
                     
-                    // Extract month and year from the month string (e.g., "May 2025")
-                    const [monthName, yearStr] = month.split(' ');
-                    const monthIndex = new Date(`${monthName} 1, ${yearStr}`).getMonth();
-                    const year = parseInt(yearStr);
-                    
-                    // Create date for this working day
-                    const date = new Date(year, monthIndex, dayOfMonth);
-                    
-                    // Only add if it's actually a working day
-                    const isWorkingDay = workingDays.some(workingDay => {
-                        const wd = new Date(workingDay);
-                        return wd.getDate() === date.getDate() && 
-                               wd.getMonth() === date.getMonth() && 
-                               wd.getFullYear() === date.getFullYear();
-                    });
-                    
-                    if (isWorkingDay) {
-                        presentDates.push(date);
-                    }
+                    const date = new Date(year, month, day);
+                    presentDates.push(date);
                 }
-            }
+            });
 
-            // Fix Absent Days Calculation
-            const presentSet = new Set(presentDates.map(d => d.toDateString()));
-
-            // Convert workingDays to Date objects and match properly
-            const absentDates = workingDays
-                .map(day => new Date(day)) // Convert working days to Date objects
-                .filter(day => !presentSet.has(day.toDateString())); // Correct filtering
-
+            // Calculate absent days based on working days minus present days
+            // Convert present dates to a set of strings for comparison
+            const presentDateStrings = new Set(presentDates.map(date => {
+                const d = date;
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }));
+            
+            // Absent days are working days that are not in present dates
+            const absentDates = [];
+            workingDaySet.forEach(dateStr => {
+                if (!presentDateStrings.has(dateStr)) {
+                    const year = parseInt(dateStr.split('-')[0]);
+                    const month = parseInt(dateStr.split('-')[1]) - 1;
+                    const day = parseInt(dateStr.split('-')[2]);
+                    absentDates.push(new Date(year, month, day));
+                }
+            });
+            
+            // Calculate percentage
             const presentPercent = workingDays.length > 0 ? (presentDates.length / workingDays.length) * 100 : 0;
 
+            // Update or create attendance record
             let attendanceDoc = await Attendance.findOne({ studentId });
 
             if (!attendanceDoc) {
@@ -1727,7 +1755,7 @@ const getAttendanceTemplate = async (req, res) => {
         if (!classNum || !division) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Class and division are required parameters' 
+                message: 'Class, division, and month are required parameters' 
             });
         }
         
@@ -1741,9 +1769,9 @@ const getAttendanceTemplate = async (req, res) => {
         }).sort({ roll: 1 }).select('_id fullName roll');
         
         if (!students || students.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No students found in this class' 
+            return res.status(404).json({
+                success: false,
+                message: 'No students found in this class'
             });
         }
         
@@ -1761,6 +1789,22 @@ const getAttendanceTemplate = async (req, res) => {
         
         const metadataSheet = xlsx.utils.json_to_sheet(metadataData);
         xlsx.utils.book_append_sheet(workbook, metadataSheet, '_metadata');
+        
+        // Get working days for the specified month if provided
+        let workingDays = [];
+        if (month) {
+            const schoolDoc = await SchoolWorkingDay.findOne({
+                class: parseInt(classNum),
+                division: division
+            });
+            
+            if (schoolDoc) {
+                const monthRecord = schoolDoc.attendance.find(item => item.month === month);
+                if (monthRecord && monthRecord.workingDays) {
+                    workingDays = monthRecord.workingDays;
+                }
+            }
+        }
         
         if (templateFormat === 'weekly') {
             // Weekly format - one sheet with all students for a week
@@ -1838,9 +1882,27 @@ const getAttendanceTemplate = async (req, res) => {
             // Create headers with dates
             const headers = ['Student ID', 'Student Name', 'Roll No'];
             
-            // Add date headers (1, 2, 3, etc.)
-            for (let i = 1; i <= daysInMonth; i++) {
-                headers.push(i.toString());
+            // Filter the days in month to only include working days
+            const workingDaysMap = new Map();
+            
+            // If we have working days defined, use only those
+            if (workingDays.length > 0) {
+                workingDays.forEach(day => {
+                    const dayDate = new Date(day);
+                    const dayOfMonth = dayDate.getDate();
+                    workingDaysMap.set(dayOfMonth, true);
+                    headers.push(dayOfMonth.toString());
+                });
+            } else {
+                // If no working days defined, include all days for the template
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const date = new Date(year, monthIndex, i);
+                    // Default to weekdays (Monday to Friday)
+                    if (date.getDay() !== 0 && date.getDay() !== 6) {
+                        workingDaysMap.set(i, true);
+                        headers.push(i.toString());
+                    }
+                }
             }
             
             // Add summary columns
@@ -1848,7 +1910,7 @@ const getAttendanceTemplate = async (req, res) => {
             
             const data = [headers];
             
-            // Add rows for students with 'p' for present days (as per your example)
+            // Add rows for students with empty cells for attendance marking
             students.forEach(student => {
                 const studentRow = [
                     student._id.toString(),
@@ -1856,37 +1918,25 @@ const getAttendanceTemplate = async (req, res) => {
                     student.roll.toString()
                 ];
                 
-                // Add 'p' for most days (by default marking all weekdays as present)
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const date = new Date(year, monthIndex, i);
-                    // Mark as present 'p' for weekdays (Monday to Friday)
-                    studentRow.push(date.getDay() !== 0 && date.getDay() !== 6 ? 'p' : '');
+                // Add empty cells for each working day
+                if (workingDays.length > 0) {
+                    workingDays.forEach(() => {
+                        studentRow.push('');
+                    });
+                } else {
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const date = new Date(year, monthIndex, i);
+                        if (date.getDay() !== 0 && date.getDay() !== 6) {
+                            studentRow.push('');
+                        }
+                    }
                 }
                 
-                // Calculate totals automatically
-                const presentCount = studentRow.slice(3, 3 + daysInMonth).filter(val => val === 'p').length;
-                const absentCount = daysInMonth - presentCount;
-                const percentage = ((presentCount / daysInMonth) * 100).toFixed(2);
-                
-                // Add totals
-                studentRow.push(presentCount.toString()); // Total Present
-                studentRow.push(absentCount.toString()); // Total Absent 
-                studentRow.push(percentage); // Percentage
+                // Add empty cells for totals
+                studentRow.push('', '', '');
                 
                 data.push(studentRow);
             });
-            
-            // Add instructions below the data
-            const lastRowIndex = data.length + 2;
-            
-            const instructions = [
-                ['INSTRUCTIONS:'],
-                ['1. "p" indicates present days, empty cells indicate absent days'],
-                ['2. Do not modify the Student ID, Student Name and Roll No columns'],
-                [`3. This is a monthly template for ${monthName} ${year}`],
-                [`4. Class: ${classNum}, Division: ${division}`],
-                ['5. The last three columns show attendance statistics']
-            ];
             
             // Create the worksheet with the data
             const worksheet = xlsx.utils.aoa_to_sheet(data);
@@ -1898,9 +1948,10 @@ const getAttendanceTemplate = async (req, res) => {
                 { wch: 8 },  // Roll No
             ];
             
-            // Add narrow width for date columns
-            for (let i = 1; i <= daysInMonth; i++) {
-                colWidths.push({ wch: 9 }); // Wider for date format
+            // Add narrow width for working day columns
+            const workingDaysCount = workingDaysMap.size;
+            for (let i = 0; i < workingDaysCount; i++) {
+                colWidths.push({ wch: 6 });
             }
             
             // Add width for total columns
@@ -1909,6 +1960,19 @@ const getAttendanceTemplate = async (req, res) => {
             colWidths.push({ wch: 10 }); // Percentage
             
             worksheet['!cols'] = colWidths;
+            
+            // Add instructions below the data
+            const lastRowIndex = data.length + 2;
+            
+            const instructions = [
+                ['INSTRUCTIONS:'],
+                ['1. "p" indicates present days, empty cells indicate absent days'],
+                ['2. Do not modify the Student ID, Student Name and Roll No columns'],
+                [`3. This is a monthly template for ${monthName} ${year}`],
+                [`4. Class: ${classNum}, Division: ${division}`],
+                ['5. Only working days are included in the template'],
+                ['6. The last three columns show attendance statistics']
+            ];
             
             // Add instructions
             xlsx.utils.sheet_add_aoa(worksheet, instructions, { origin: `A${lastRowIndex}` });
@@ -1980,6 +2044,16 @@ const getMonthlyAttendance = async (req, res) => {
             }
         }
         
+        // Check if working days are defined
+        if (workingDays.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No working days defined for this month. Please set working days first.',
+                workingDaysCount: 0,
+                attendanceStats: []
+            });
+        }
+        
         // Get attendance records for all students
         const studentIds = students.map(student => student._id);
         const attendanceRecords = await Attendance.find({
@@ -1998,9 +2072,35 @@ const getMonthlyAttendance = async (req, res) => {
             if (studentAttendanceDoc) {
                 const monthRecord = studentAttendanceDoc.attendance.find(item => item.month === month);
                 if (monthRecord) {
-                    presentDays = monthRecord.presentDates?.length || 0;
-                    absentDays = monthRecord.absentDates?.length || 0;
+                    // Create a normalized format for date comparison - using just YYYY-MM-DD strings
+                    // This ensures we don't have timezone or time-of-day issues
+                    const presentDatesArray = monthRecord.presentDates.map(date => {
+                        const d = new Date(date);
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    });
+                    
+                    // Similarly convert working days to the same normalized format
+                    const workingDaysArray = workingDays.map(day => {
+                        const d = new Date(day);
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    });
+                    
+                    // Create sets for faster lookups
+                    const presentDatesSet = new Set(presentDatesArray);
+                    const workingDaysSet = new Set(workingDaysArray);
+                    
+                    // Count present days (days that are both in present dates and working days)
+                    presentDays = [...workingDaysSet].filter(day => presentDatesSet.has(day)).length;
+                    
+                    // Absent days are simply working days minus present days
+                    absentDays = workingDaysSet.size - presentDays;
+                } else {
+                    // If student has no attendance record for this month, mark all working days as absent
+                    absentDays = workingDays.length;
                 }
+            } else {
+                // If student has no attendance record at all, mark all working days as absent
+                absentDays = workingDays.length;
             }
             
             return {
@@ -2070,30 +2170,11 @@ const getWorkingDays = async (req, res) => {
         });
         
         if (!schoolDoc) {
-            // If no working days set yet, return empty array
-            // Parse month and year to generate default working days (weekdays)
-            const [monthName, yearStr] = month.split(' ');
-            const monthIndex = new Date(`${monthName} 1, ${yearStr}`).getMonth();
-            const year = parseInt(yearStr);
-            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-            
-            // Generate all days in the month
-            const allDays = [];
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateStr = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                allDays.push(dateStr);
-            }
-            
-            // Default to weekdays (Monday to Friday)
-            const defaultWorkingDays = allDays.filter(day => {
-                const date = new Date(day);
-                return date.getDay() !== 0 && date.getDay() !== 6; // Exclude Sunday (0) and Saturday (6)
-            });
-            
+            // If no working days document exists yet, return empty array
             return res.status(200).json({
                 success: true,
-                workingDays: defaultWorkingDays,
-                isDefault: true
+                workingDays: [],
+                isDefault: false
             });
         }
         
@@ -2105,7 +2186,7 @@ const getWorkingDays = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 workingDays: [],
-                message: 'No working days set for this month'
+                isDefault: false
             });
         }
         
@@ -2117,7 +2198,8 @@ const getWorkingDays = async (req, res) => {
         
         res.status(200).json({
             success: true,
-            workingDays: formattedWorkingDays
+            workingDays: formattedWorkingDays,
+            isDefault: false
         });
         
     } catch (error) {
